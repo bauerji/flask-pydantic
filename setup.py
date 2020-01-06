@@ -8,7 +8,7 @@ hints.
 """
 from typing import Generator
 from pathlib import Path
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 REQUIREMENTS_PATH = Path(__file__).resolve().parent / "requirements" / "base.pip"
@@ -33,7 +33,7 @@ setup(
     author_email="baueji@gmail.com",
     description="Flask extension for integration with Pydantic library",
     long_description=__doc__,
-    py_modules=["flask_pydantic"],
+    packages=find_packages(exclude=["tests", "examples"]),
     install_requires=list(get_install_requires()),
     python_requires=">=3.7",
     classifiers=[
