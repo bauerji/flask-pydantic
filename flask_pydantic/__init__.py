@@ -1,1 +1,1 @@
-from .core import validate
+from .core import validate  # noqa: F401

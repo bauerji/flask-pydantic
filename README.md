@@ -106,3 +106,8 @@ def post():
 def post():
     ...
 ```
+
+## TODOs:
+- iterable of objects
+    - in request body
+    - in response body
