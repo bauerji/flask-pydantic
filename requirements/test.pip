@@ -1,0 +1,7 @@
+-r base.pip
+
+pytest~=5.3.2
+pytest-flask
+pytest-flake8
+pytest-coverage
+pytest-black
