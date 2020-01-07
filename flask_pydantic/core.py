@@ -58,6 +58,7 @@ def validate(
 
     -> that will render JSON response with serialized MyModel instance
     """
+
     def decorate(func: Callable[[InputParams], Any]) -> Callable[[InputParams], Any]:
         @wraps(func)
         def wrapper(*args, **kwargs):

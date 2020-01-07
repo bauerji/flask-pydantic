@@ -62,7 +62,6 @@ def is_excluded(post: dict, exclude: Optional[str]) -> bool:
 def pass_search(
     post: dict, search_term: str, exclude: Optional[str], min_views: Optional[int]
 ) -> bool:
-    print(post, search_term, exclude, min_views)
     return (
         (search_term in post["title"] or search_term in post["text"])
         and not is_excluded(post, exclude)
@@ -79,8 +78,6 @@ def app(posts, response_model, query_model, body_model, post_model):
     def post():
         query_params = request.query_params
         body = request.body_params
-        print(query_params)
-        print(body)
         results = [
             post_model(**p)
             for p in posts

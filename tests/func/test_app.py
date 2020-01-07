@@ -41,6 +41,20 @@ test_cases = [
         {"search_term": "text"},
         200,
         {"count": 2, "results": [{"title": "2", "text": "another text", "views": 2}]},
+        id="valid parameters",
+    ),
+    pytest.param(
+        "",
+        {"search_term": "text"},
+        200,
+        {
+            "count": 3,
+            "results": [
+                {"title": "title 1", "text": "random text", "views": 1},
+                {"title": "2", "text": "another text", "views": 2},
+            ],
+        },
+        id="valid params, no query",
     ),
 ]
 
