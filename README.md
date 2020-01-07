@@ -76,7 +76,7 @@ def post():
           }
         }
         ```
-      - for incompatible type (e. g. string `/?age=not_a_number`)
+    - for incompatible type (e. g. string `/?age=not_a_number`)
         ```json
         {
           "validation_error": {
