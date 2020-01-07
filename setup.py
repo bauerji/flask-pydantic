@@ -16,6 +16,7 @@ CURRENT_FOLDER = Path(__file__).resolve().parent
 REQUIREMENTS_PATH = CURRENT_FOLDER / "requirements" / "base.pip"
 VERSION_FILE_PATH = CURRENT_FOLDER / "flask_pydantic" / "version.py"
 VERSION_REGEX = r"^__version__ = [\"|\']([0-9\.a-z]+)[\"|\']"
+README = (CURRENT_FOLDER / "README.md").read_text()
 
 
 def get_install_requires(
@@ -45,7 +46,8 @@ setup(
     author="Jiri Bauer",
     author_email="baueji@gmail.com",
     description="Flask extension for integration with Pydantic library",
-    long_description=__doc__,
+    long_description=README,
+    long_description_content_type="text/markdown",
     packages=["flask_pydantic"],
     install_requires=list(get_install_requires()),
     python_requires=">=3.7",
