@@ -1,9 +1,23 @@
 # Flask-Pydantic
 Flask extension for integration with the awesome [pydantic package](https://github.com/samuelcolvin/pydantic) with [Flask](https://palletsprojects.com/p/flask/).
 
+## Basics
+`validate` decorator validates query and body request parameters and makes them accessible via flask's `request` variable
+
+| **parameter type** | **`request` attribute name** |
+|:--------------:|:------------------------:|
+| query          | `query_params`           |
+| body           | `body_params`            |
+
+Success response status code can be modified via `on_success_status` parameter of `validate` decorator.
+
+If validation fails, `400` response is returned with failure explanation.
 
 ## Usage
 ### Basic example
+Simply use `validate` decorator on route function. 
+
+:exclamation: Be aware that `@app.route` decorator must precede `@validate` (i. e. `@validate` must be closer to the function declaration).
 ```python
 from typing import Optional
 
@@ -111,3 +125,5 @@ def post():
 - iterable of objects
     - in request body
     - in response body
+- header request parameters
+- cookie request parameters
