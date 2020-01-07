@@ -1,7 +1,7 @@
 from functools import wraps
 from typing import Optional, Callable, TypeVar, Any
 
-from flask import request, jsonify, make_response
+from flask import request, jsonify, make_response, Response
 from pydantic import BaseModel, ValidationError
 
 try:
@@ -11,6 +11,12 @@ except ImportError:
 
 
 InputParams = TypeVar("InputParams")
+
+
+def make_json_response(model: BaseModel, status_code: int) -> Response:
+    response = make_response(model.json(), status_code)
+    response.mimetype = "application/json"
+    return response
 
 
 def validate(
@@ -41,14 +47,14 @@ def validate(
             res = func(*args, **kwargs)
 
             if isinstance(res, BaseModel):
-                return make_response(res.json(), on_success_status)
+                return make_json_response(res, on_success_status)
 
             if (
                 isinstance(res, tuple)
                 and len(res) == 2
                 and isinstance(res[0], BaseModel)
             ):
-                return make_response(res[0].json(), res[1])
+                return make_json_response(res[0], res[1])
 
             return res
 
