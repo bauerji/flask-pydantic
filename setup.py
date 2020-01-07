@@ -6,12 +6,16 @@ This library provides port of Pydantic library to Flask.
 It allows quick and easy-to-use way of data parsing and validation using python type
 hints.
 """
-from typing import Generator
+import re
 from pathlib import Path
-from setuptools import setup, find_packages
+from setuptools import setup
+from typing import Generator
 
 
-REQUIREMENTS_PATH = Path(__file__).resolve().parent / "requirements" / "base.pip"
+CURRENT_FOLDER = Path(__file__).resolve().parent
+REQUIREMENTS_PATH = CURRENT_FOLDER / "requirements" / "base.pip"
+VERSION_FILE_PATH = CURRENT_FOLDER / "flask_pydantic" / "version.py"
+VERSION_REGEX = r"^__version__ = [\"|\']([0-9\.a-z]+)[\"|\']"
 
 
 def get_install_requires(
@@ -24,16 +28,25 @@ def get_install_requires(
             yield line.strip()
 
 
+def find_version(file_path: Path = VERSION_FILE_PATH) -> str:
+    file_content = file_path.open("r").read()
+    version_match = re.search(VERSION_REGEX, file_content, re.M)
+
+    if version_match:
+        return version_match.group(1)
+    raise RuntimeError(f"Unable to find version string in {file_path}")
+
+
 setup(
     name="Flask-Pydantic",
-    version="0.0.1",
+    version=find_version(),
     url="https://github.com/bauerji/flask_pydantic.git",
     license="MIT",
     author="Jiri Bauer",
     author_email="baueji@gmail.com",
     description="Flask extension for integration with Pydantic library",
     long_description=__doc__,
-    packages=find_packages(exclude=["tests", "examples"]),
+    packages=["flask_pydantic"],
     install_requires=list(get_install_requires()),
     python_requires=">=3.7",
     classifiers=[
