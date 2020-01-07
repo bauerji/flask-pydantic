@@ -14,6 +14,7 @@ InputParams = TypeVar("InputParams")
 
 
 def make_json_response(model: BaseModel, status_code: int) -> Response:
+    """serializes model, creates JSON response with given status code"""
     response = make_response(model.json(), status_code)
     response.mimetype = "application/json"
     return response
@@ -24,6 +25,39 @@ def validate(
     query: Optional[BaseModel] = None,
     on_success_status: int = 200,
 ):
+    """
+    Decorator for route methods which will validate query and body parameters as well as
+    serialize the response (if it derives from pydantic's BaseModel class).
+
+    example:
+
+    from flask import request
+    from flask_pydantic import validate
+    from pydantic import BaseModel
+
+    class Query(BaseModel):
+        query: str
+
+    class Body(BaseModel):
+        color: str
+
+    class MyModel(BaseModel):
+        id: int
+        color: str
+        description: str
+
+    ...
+
+    @app.route("/")
+    @validate(query=Query, body=Body)
+    def test_route():
+        query = request.query_params.query
+        color = request.body_params.query
+
+        return MyModel(...)
+
+    -> that will render JSON response with serialized MyModel instance
+    """
     def decorate(func: Callable[[InputParams], Any]) -> Callable[[InputParams], Any]:
         @wraps(func)
         def wrapper(*args, **kwargs):
