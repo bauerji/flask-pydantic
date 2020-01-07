@@ -2,8 +2,11 @@ from typing import NamedTuple, Optional, Type
 
 import pytest
 from flask import jsonify
-from flask_pydantic import validate
 from pydantic import BaseModel
+
+from flask_pydantic import validate
+from flask_pydantic.exceptions import InvalidIterableOfModelsException
+from flask_pydantic.core import is_iterable_of_models
 
 
 class ValidateParams(NamedTuple):
@@ -150,3 +153,47 @@ class TestValidate:
 
         response = validate()(f)()
         assert response.json == expected_response_body
+
+    @pytest.mark.usefixtures("request_ctx")
+    def test_response_many_response_objs(self):
+        response_content = [
+            ResponseModel(q1=1, q2="2", b1=3.14, b2="b2"),
+            ResponseModel(q1=2, q2="3", b1=3.14),
+            ResponseModel(q1=3, q2="4", b1=6.9, b2="b4"),
+        ]
+        expected_response_body = [
+            {"q1": 1, "q2": "2", "b1": 3.14, "b2": "b2"},
+            {"q1": 2, "q2": "3", "b1": 3.14},
+            {"q1": 3, "q2": "4", "b1": 6.9, "b2": "b4"},
+        ]
+
+        def f():
+            return response_content
+
+        response = validate(exclude_none=True, response_many=True)(f)()
+        assert response.json == expected_response_body
+
+    @pytest.mark.usefixtures("request_ctx")
+    def test_invalid_many_raises(self):
+        def f():
+            return ResponseModel(q1=1, q2="2", b1=3.14, b2="b2")
+
+        with pytest.raises(InvalidIterableOfModelsException):
+            validate(response_many=True)(f)()
+
+
+class TestIsIterableOfModels:
+    def test_simple_true_case(self):
+        models = [
+            QueryModel(q1=1, q2="w"),
+            QueryModel(q1=2, q2="wsdf"),
+            RequestBodyModel(b1=3.1),
+            RequestBodyModel(b1=0.1),
+        ]
+        assert is_iterable_of_models(models)
+
+    def test_false_for_non_iterable(self):
+        assert not is_iterable_of_models(1)
+
+    def test_false_for_single_model(self):
+        assert not is_iterable_of_models(RequestBodyModel(b1=12))

@@ -124,6 +124,5 @@ def post():
 ## TODOs:
 - iterable of objects
     - in request body
-    - in response body
 - header request parameters
 - cookie request parameters
