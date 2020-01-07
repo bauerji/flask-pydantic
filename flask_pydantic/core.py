@@ -13,9 +13,11 @@ except ImportError:
 InputParams = TypeVar("InputParams")
 
 
-def make_json_response(model: BaseModel, status_code: int) -> Response:
+def make_json_response(
+    model: BaseModel, status_code: int, exclude_none: bool = False
+) -> Response:
     """serializes model, creates JSON response with given status code"""
-    response = make_response(model.json(), status_code)
+    response = make_response(model.json(exclude_none=exclude_none), status_code)
     response.mimetype = "application/json"
     return response
 
@@ -24,10 +26,14 @@ def validate(
     body: Optional[BaseModel] = None,
     query: Optional[BaseModel] = None,
     on_success_status: int = 200,
+    exclude_none: bool = False,
 ):
     """
     Decorator for route methods which will validate query and body parameters as well as
     serialize the response (if it derives from pydantic's BaseModel class).
+
+    `exclude_none` whether to remove None fields from response
+
 
     example:
 
@@ -82,14 +88,16 @@ def validate(
             res = func(*args, **kwargs)
 
             if isinstance(res, BaseModel):
-                return make_json_response(res, on_success_status)
+                return make_json_response(
+                    res, on_success_status, exclude_none=exclude_none
+                )
 
             if (
                 isinstance(res, tuple)
                 and len(res) == 2
                 and isinstance(res[0], BaseModel)
             ):
-                return make_json_response(res[0], res[1])
+                return make_json_response(res[0], res[1], exclude_none=exclude_none)
 
             return res
 

@@ -122,7 +122,6 @@ def post():
 ```
 
 ## TODOs:
-- ability to filter out `None`s from response (`exclude_none` parameter of `BaseModel.json()`)
 - iterable of objects
     - in request body
     - in response body

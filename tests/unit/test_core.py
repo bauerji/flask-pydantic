@@ -15,6 +15,7 @@ class ValidateParams(NamedTuple):
     request_body: dict = {}
     expected_response_body: Optional[dict] = None
     expected_status_code: int = 200
+    exclude_none: bool = False
 
 
 class ResponseModel(BaseModel):
@@ -45,6 +46,18 @@ validate_test_cases = [
             body_model=RequestBodyModel,
         ),
         id="simple valid example with default values",
+    ),
+    pytest.param(
+        ValidateParams(
+            request_body={"b1": 1.4},
+            request_query={"q1": 1},
+            expected_response_body={"q1": 1, "q2": "default", "b1": 1.4},
+            response_model=ResponseModel,
+            query_model=QueryModel,
+            body_model=RequestBodyModel,
+            exclude_none=True,
+        ),
+        id="simple valid example with default values, exclude none",
     ),
     pytest.param(
         ValidateParams(
@@ -101,6 +114,7 @@ class TestValidate:
             query=parameters.query_model,
             body=parameters.body_model,
             on_success_status=parameters.on_success_status,
+            exclude_none=parameters.exclude_none,
         )(f)()
 
         assert response.status_code == parameters.expected_status_code
