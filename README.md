@@ -9,9 +9,11 @@ Flask extension for integration with the awesome [pydantic package](https://gith
 | query          | `query_params`           |
 | body           | `body_params`            |
 
-Success response status code can be modified via `on_success_status` parameter of `validate` decorator.
+- Success response status code can be modified via `on_success_status` parameter of `validate` decorator.
+- `response_many` parameter set to `False` enables serialization of multiple models (route function should therefore return iterable of models)
+- If validation fails, `400` response is returned with failure explanation.
 
-If validation fails, `400` response is returned with failure explanation.
+For more details see in-code docstring or example app.
 
 ## Usage
 ### Basic example
