@@ -64,7 +64,7 @@ def validate(
         def wrapper(*args, **kwargs):
             query_params = request.args
             body_params = request.get_json()
-            q, b, err = {}, {}, {}
+            q, b, err = None, None, {}
             if query:
                 try:
                     q = query(**query_params)
@@ -75,10 +75,10 @@ def validate(
                     b = body(**body_params)
                 except ValidationError as ve:
                     err["body_params"] = ve.errors()
-            if err:
-                return make_response(jsonify({"validation_error": err}), 400)
             request.query_params = q
             request.body_params = b
+            if err:
+                return make_response(jsonify({"validation_error": err}), 400)
             res = func(*args, **kwargs)
 
             if isinstance(res, BaseModel):
