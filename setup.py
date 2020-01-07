@@ -8,7 +8,7 @@ hints.
 """
 import re
 from pathlib import Path
-from setuptools import setup, find_packages
+from setuptools import setup
 from typing import Generator
 
 
@@ -46,7 +46,7 @@ setup(
     author_email="baueji@gmail.com",
     description="Flask extension for integration with Pydantic library",
     long_description=__doc__,
-    packages=find_packages(exclude=["tests", "examples"]),
+    packages=["flask_pydantic"],
     install_requires=list(get_install_requires()),
     python_requires=">=3.7",
     classifiers=[
