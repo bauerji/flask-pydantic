@@ -2,6 +2,8 @@
 [![Actions Status](https://github.com/bauerji/flask_pydantic/workflows/Python%20package/badge.svg?branch=master)](https://github.com/bauerji/flask_pydantic/actions)
 [![PyPI](https://img.shields.io/pypi/v/Flask-Pydantic?color=g)](https://pypi.org/project/Flask-Pydantic/)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/bauerji/flask_pydantic.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/bauerji/flask_pydantic/context:python)
+[![License](https://img.shields.io/badge/license-MIT-purple)](https://github.com/bauerji/flask_pydantic/blob/master/LICENSE)
+[![Code style](https://img.shields.io/badge/code%20style-black-black)](https://github.com/psf/black)
 
 Flask extension for integration of the awesome [pydantic package](https://github.com/samuelcolvin/pydantic) with [Flask](https://palletsprojects.com/p/flask/).
 
