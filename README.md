@@ -123,6 +123,34 @@ def post():
     ...
 ```
 
+## Contributing
+Feature requests and pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+- clone repository
+    ```bash
+    git clone https://github.com/bauerji/flask_pydantic.git
+    cd flask_pydantic
+    ```
+ - create virtual environment and activate it
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate
+    ```
+ - install development requirements
+    ```bash
+    python3 -m pip install -r requirements/test.pip
+    ```
+ - checkout new branch and make your desired changes (don't forget to update tests)
+    ```bash
+    git checkout -b <your_branch_name>
+    ```
+ - run tests
+    ```bash
+    python3 -m pytest
+    ```
+ - if tests fails on Black tests, make sure You have your code compliant with style of [Black formatter](https://github.com/psf/black)
+ - push your changes and create a pull request to master branch
+
 ## TODOs:
 - iterable of objects
     - in request body
