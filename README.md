@@ -16,7 +16,8 @@ Flask extension for integration of the awesome [pydantic package](https://github
 | body           | `body_params`            |
 
 - Success response status code can be modified via `on_success_status` parameter of `validate` decorator.
-- `response_many` parameter set to `False` enables serialization of multiple models (route function should therefore return iterable of models)
+- `response_many` parameter set to `True` enables serialization of multiple models (route function should therefore return iterable of models).
+- `request_body_many` parameter set to `False` analogically enables serialization of multiple models inside of the root level of request body. If the request body doesn't contain an array of objects `400` response is returned,
 - If validation fails, `400` response is returned with failure explanation.
 
 For more details see in-code docstring or example app.
