@@ -1,10 +1,10 @@
 from functools import wraps
-from typing import Optional, Callable, TypeVar, Any, Union, Iterable, Type
+from typing import Optional, Callable, TypeVar, Any, Union, Iterable, Type, List
 
 from flask import request, jsonify, make_response, Response
 from pydantic import BaseModel, ValidationError
 
-from .exceptions import InvalidIterableOfModelsException
+from .exceptions import InvalidIterableOfModelsException, ManyModelValidationError
 
 try:
     from flask_restful import original_flask_make_response as make_response
@@ -31,11 +31,28 @@ def make_json_response(
     return response
 
 
-def is_iterable_of_models(response_content: Any) -> bool:
+def is_iterable_of_models(content: Any) -> bool:
     try:
-        return all(isinstance(obj, BaseModel) for obj in response_content)
+        return all(isinstance(obj, BaseModel) for obj in content)
     except TypeError:
         return False
+
+
+def validate_many_models(model: Type[BaseModel], content: Any) -> List[BaseModel]:
+    try:
+        return [model(**fields) for fields in content]
+    except TypeError:
+        # iteration through `content` fails
+        err = [
+            {
+                "loc": ["root"],
+                "msg": "is not an array of objects",
+                "type": "type_error.array",
+            }
+        ]
+        raise ManyModelValidationError(err)
+    except ValidationError as ve:
+        raise ManyModelValidationError(ve.errors())
 
 
 def validate(
@@ -44,16 +61,23 @@ def validate(
     on_success_status: int = 200,
     exclude_none: bool = False,
     response_many: bool = False,
+    request_body_many: bool = False,
 ):
     """
-    Decorator for route methods which will validate query and body parameters as well as
-    serialize the response (if it derives from pydantic's BaseModel class).
+    Decorator for route methods which will validate query and body parameters
+    as well as serialize the response (if it derives from pydantic's BaseModel
+    class).
+
+    Request parameters are accessible via flask's `request` variable:
+        - request.query_params
+        - request.body_params
 
     `exclude_none` whether to remove None fields from response
     `response_many` whether content of response consists of many objects
         (e. g. List[BaseModel]). Resulting response will be an array of serialized
         models.
-
+    `request_body_many` whether response body contains array of given model
+        (request.body_params then contains list of models i. e. List[BaseModel])
 
     example:
 
@@ -97,10 +121,16 @@ def validate(
                 except ValidationError as ve:
                     err["query_params"] = ve.errors()
             if body:
-                try:
-                    b = body(**body_params)
-                except ValidationError as ve:
-                    err["body_params"] = ve.errors()
+                if request_body_many:
+                    try:
+                        b = validate_many_models(body, body_params)
+                    except ManyModelValidationError as e:
+                        err["body_params"] = e.errors()
+                else:
+                    try:
+                        b = body(**body_params)
+                    except ValidationError as ve:
+                        err["body_params"] = ve.errors()
             request.query_params = q
             request.body_params = b
             if err:

@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional, Type
+from typing import NamedTuple, Optional, Type, Union, List
 
 import pytest
 from flask import jsonify
@@ -15,10 +15,12 @@ class ValidateParams(NamedTuple):
     response_model: Type[BaseModel] = None
     on_success_status: int = 200
     request_query: dict = {}
-    request_body: dict = {}
+    request_body: Union[dict, List[dict]] = {}
     expected_response_body: Optional[dict] = None
     expected_status_code: int = 200
     exclude_none: bool = False
+    response_many: bool = False
+    request_body_many: bool = False
 
 
 class ResponseModel(BaseModel):
@@ -82,6 +84,26 @@ validate_test_cases = [
     ),
     pytest.param(
         ValidateParams(
+            body_model=RequestBodyModel,
+            expected_response_body={
+                "validation_error": {
+                    "body_params": [
+                        {
+                            "loc": ["root"],
+                            "msg": "is not an array of objects",
+                            "type": "type_error.array",
+                        }
+                    ]
+                }
+            },
+            request_body={"b1": 3.14, "b2": "str"},
+            expected_status_code=400,
+            request_body_many=True,
+        ),
+        id="`request_body_many=True` but in request body is a single object",
+    ),
+    pytest.param(
+        ValidateParams(
             expected_response_body={
                 "validation_error": {
                     "body_params": [
@@ -97,6 +119,26 @@ validate_test_cases = [
             expected_status_code=400,
         ),
         id="invalid body param",
+    ),
+    pytest.param(
+        ValidateParams(
+            expected_response_body={
+                "validation_error": {
+                    "body_params": [
+                        {
+                            "loc": ["b1"],
+                            "msg": "field required",
+                            "type": "value_error.missing",
+                        }
+                    ]
+                }
+            },
+            body_model=RequestBodyModel,
+            expected_status_code=400,
+            request_body=[{}],
+            request_body_many=True,
+        ),
+        id="invalid body param in many-object request body",
     ),
 ]
 
@@ -118,6 +160,8 @@ class TestValidate:
             body=parameters.body_model,
             on_success_status=parameters.on_success_status,
             exclude_none=parameters.exclude_none,
+            response_many=parameters.response_many,
+            request_body_many=parameters.request_body_many,
         )(f)()
 
         assert response.status_code == parameters.expected_status_code
@@ -180,6 +224,38 @@ class TestValidate:
 
         with pytest.raises(InvalidIterableOfModelsException):
             validate(response_many=True)(f)()
+
+    def test_valid_array_object_request_body(self, mocker, request_ctx):
+        mock_request = mocker.patch.object(request_ctx, "request")
+        mock_request.args = {"q1": 1}
+        mock_request.get_json = lambda: [
+            {"b1": 1.0, "b2": "str1"},
+            {"b1": 2.0, "b2": "str2"},
+        ]
+        expected_response_body = [
+            {"q1": 1, "q2": "default", "b1": 1.0, "b2": "str1"},
+            {"q1": 1, "q2": "default", "b1": 2.0, "b2": "str2"},
+        ]
+
+        def f():
+            query_params = mock_request.query_params
+            body_params = mock_request.body_params
+            return [
+                ResponseModel(
+                    q1=query_params.q1, q2=query_params.q2, b1=obj.b1, b2=obj.b2
+                )
+                for obj in body_params
+            ]
+
+        response = validate(
+            query=QueryModel,
+            body=RequestBodyModel,
+            request_body_many=True,
+            response_many=True,
+        )(f)()
+
+        assert response.status_code == 200
+        assert response.json == expected_response_body
 
 
 class TestIsIterableOfModels:

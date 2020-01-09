@@ -158,7 +158,5 @@ Feature requests and pull requests are welcome. For major changes, please open a
  - push your changes and create a pull request to master branch
 
 ## TODOs:
-- iterable of objects
-    - in request body
 - header request parameters
 - cookie request parameters
