@@ -1,8 +1,12 @@
 name: Upload Python Package
 
 on:
-  release:
-    types: [created]
+  push:
+    branches:
+      - master
+    tags:
+      - 'version*'
+
 
 jobs:
   deploy:
