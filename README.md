@@ -130,6 +130,9 @@ def post():
     ...
 ```
 
+### Example app
+For more complete examples see [example application](https://github.com/bauerji/flask_pydantic/tree/master/example_app).
+
 ## Contributing
 Feature requests and pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
