@@ -112,15 +112,15 @@ def validate(
     def decorate(func: Callable[[InputParams], Any]) -> Callable[[InputParams], Any]:
         @wraps(func)
         def wrapper(*args, **kwargs):
-            query_params = request.args
-            body_params = request.get_json()
             q, b, err = None, None, {}
             if query:
+                query_params = request.args
                 try:
                     q = query(**query_params)
                 except ValidationError as ve:
                     err["query_params"] = ve.errors()
             if body:
+                body_params = request.get_json()
                 if request_body_many:
                     try:
                         b = validate_many_models(body, body_params)
