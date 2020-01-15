@@ -7,6 +7,9 @@
 
 Flask extension for integration of the awesome [pydantic package](https://github.com/samuelcolvin/pydantic) with [Flask](https://palletsprojects.com/p/flask/).
 
+## Installation
+``python3 -m pip install Flask-Pydantic``
+
 ## Basics
 `validate` decorator validates query and body request parameters and makes them accessible via flask's `request` variable
 
