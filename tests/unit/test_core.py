@@ -5,7 +5,10 @@ from flask import jsonify
 from pydantic import BaseModel
 
 from flask_pydantic import validate
-from flask_pydantic.exceptions import InvalidIterableOfModelsException
+from flask_pydantic.exceptions import (
+    InvalidIterableOfModelsException,
+    JsonBodyParsingError,
+)
 from flask_pydantic.core import is_iterable_of_models
 
 
@@ -256,6 +259,28 @@ class TestValidate:
 
         assert response.status_code == 200
         assert response.json == expected_response_body
+
+    def test_unsupported_media_type(self, request_ctx, mocker):
+        mock_request = mocker.patch.object(request_ctx, "request")
+        content_type = "text/plain"
+        mock_request.headers = {"Content-Type": content_type}
+        mock_request.get_json = lambda: None
+        body_model = RequestBodyModel
+        response = validate(body_model)(lambda x: x)()
+        assert response.status_code == 415
+        assert response.json == {
+            "detail": f"Unsupported media type '{content_type}' in request. "
+            "'application/json' is required."
+        }
+
+    def test_damaged_request_body(self, request_ctx, mocker):
+        mock_request = mocker.patch.object(request_ctx, "request")
+        content_type = "application/json"
+        mock_request.headers = {"Content-Type": content_type}
+        mock_request.get_json = lambda: None
+        body_model = RequestBodyModel
+        with pytest.raises(JsonBodyParsingError):
+            validate(body_model)(lambda x: x)()
 
 
 class TestIsIterableOfModels:
