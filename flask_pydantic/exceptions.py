@@ -14,6 +14,12 @@ class InvalidIterableOfModelsException(BaseFlaskPydanticException):
     pass
 
 
+class JsonBodyParsingError(BaseFlaskPydanticException):
+    """Exception for error occurring during parsing of request body"""
+
+    pass
+
+
 class ManyModelValidationError(BaseFlaskPydanticException):
     """This exception is raised if there is a failure during validation of many
     models in an iterable"""

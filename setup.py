@@ -20,7 +20,7 @@ README = (CURRENT_FOLDER / "README.md").read_text()
 
 
 def get_install_requires(
-    req_file: Path = REQUIREMENTS_PATH
+    req_file: Path = REQUIREMENTS_PATH,
 ) -> Generator[str, None, None]:
     with req_file.open("r") as f:
         for line in f:

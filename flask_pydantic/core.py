@@ -4,7 +4,11 @@ from typing import Optional, Callable, TypeVar, Any, Union, Iterable, Type, List
 from flask import request, jsonify, make_response, Response
 from pydantic import BaseModel, ValidationError
 
-from .exceptions import InvalidIterableOfModelsException, ManyModelValidationError
+from .exceptions import (
+    InvalidIterableOfModelsException,
+    ManyModelValidationError,
+    JsonBodyParsingError,
+)
 
 try:
     from flask_restful import original_flask_make_response as make_response
@@ -29,6 +33,14 @@ def make_json_response(
     response = make_response(js, status_code)
     response.mimetype = "application/json"
     return response
+
+
+def unsupported_media_type_response(request_cont_type: str) -> Response:
+    body = {
+        "detail": f"Unsupported media type '{request_cont_type}' in request. "
+        "'application/json' is required."
+    }
+    return make_response(jsonify(body), 415)
 
 
 def is_iterable_of_models(content: Any) -> bool:
@@ -129,6 +141,12 @@ def validate(
                 else:
                     try:
                         b = body(**body_params)
+                    except TypeError:
+                        content_type = request.headers.get("Content-Type", "").lower()
+                        if content_type != "application/json":
+                            return unsupported_media_type_response(content_type)
+                        else:
+                            raise JsonBodyParsingError()
                     except ValidationError as ve:
                         err["body_params"] = ve.errors()
             request.query_params = q
