@@ -1,7 +1,7 @@
 from functools import wraps
 from typing import Optional, Callable, TypeVar, Any, Union, Iterable, Type, List
 
-from flask import request, jsonify, make_response, Response
+from flask import request, jsonify, make_response, Response, current_app
 from pydantic import BaseModel, ValidationError
 
 from .exceptions import (
@@ -152,7 +152,10 @@ def validate(
             request.query_params = q
             request.body_params = b
             if err:
-                return make_response(jsonify({"validation_error": err}), 400)
+                status_code = current_app.config.get(
+                    "FLASK_PYDANTIC_VALIDATION_ERROR_STATUS_CODE", 400
+                )
+                return make_response(jsonify({"validation_error": err}), status_code)
             res = func(*args, **kwargs)
 
             if response_many:

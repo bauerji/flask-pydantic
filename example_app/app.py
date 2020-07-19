@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Optional
 
 from flask import Flask, request, jsonify
@@ -5,6 +6,14 @@ from flask_pydantic import validate
 from pydantic import BaseModel
 
 app = Flask("flask_pydantic_app")
+
+
+@dataclass
+class Config:
+    FLASK_PYDANTIC_VALIDATION_ERROR_STATUS_CODE: int = 422
+
+
+app.config.from_object(Config)
 
 
 class QueryModel(BaseModel):

@@ -133,6 +133,8 @@ def post():
     ...
 ```
 
+Status code in case of validation error can be modified using `FLASK_PYDANTIC_VALIDATION_ERROR_STATUS_CODE` flask configuration variable.
+
 ### Example app
 For more complete examples see [example application](https://github.com/bauerji/flask_pydantic/tree/master/example_app).
 
