@@ -138,6 +138,10 @@ Status code in case of validation error can be modified using `FLASK_PYDANTIC_VA
 ### Example app
 For more complete examples see [example application](https://github.com/bauerji/flask_pydantic/tree/master/example_app).
 
+### Configuration
+The behaviour can be configured using flask's application config
+``FLASK_PYDANTIC_VALIDATION_ERROR_STATUS_CODE`` - response status code after validation error (defaults to `400`)
+
 ## Contributing
 Feature requests and pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
