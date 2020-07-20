@@ -65,3 +65,10 @@ class TestSimple:
         response = client.post(f"/search{query}", json=body)
         assert response.json == expected_response
         assert response.status_code == expected_status
+
+    def test_error_status_code(self, app, mocker, client):
+        mocker.patch.dict(
+            app.config, {"FLASK_PYDANTIC_VALIDATION_ERROR_STATUS_CODE": 422}
+        )
+        response = client.post("/search?limit=2", json={})
+        assert response.status_code == 422
