@@ -1,7 +1,7 @@
 from typing import Type
 
 from pydantic import BaseModel
-from werkzeug import ImmutableMultiDict
+from werkzeug.datastructures import ImmutableMultiDict
 
 
 def convert_query_params(

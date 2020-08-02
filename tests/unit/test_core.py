@@ -3,7 +3,7 @@ from typing import NamedTuple, Optional, Type, Union, List
 import pytest
 from flask import jsonify
 from pydantic import BaseModel
-from werkzeug import ImmutableMultiDict
+from werkzeug.datastructures import ImmutableMultiDict
 
 from flask_pydantic import validate
 from flask_pydantic.exceptions import (
