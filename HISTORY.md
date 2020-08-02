@@ -12,3 +12,8 @@
 
 ## 0.0.7 (2020-07-20)
 - add possibility to configure response status code after `ValidationError` using flask app config value `FLASK_PYDANTIC_VALIDATION_ERROR_STATUS_CODE`
+
+
+## 0.1.0 (2020-08-02)
+### Features
+- add proper parsing and validation of array query parameters
