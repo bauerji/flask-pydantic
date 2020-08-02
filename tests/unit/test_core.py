@@ -3,13 +3,14 @@ from typing import NamedTuple, Optional, Type, Union, List
 import pytest
 from flask import jsonify
 from pydantic import BaseModel
+from werkzeug import ImmutableMultiDict
 
 from flask_pydantic import validate
 from flask_pydantic.exceptions import (
     InvalidIterableOfModelsException,
     JsonBodyParsingError,
 )
-from flask_pydantic.core import is_iterable_of_models
+from flask_pydantic.core import is_iterable_of_models, convert_query_params
 
 
 class ValidateParams(NamedTuple):
@@ -17,7 +18,7 @@ class ValidateParams(NamedTuple):
     query_model: Optional[Type[BaseModel]] = None
     response_model: Type[BaseModel] = None
     on_success_status: int = 200
-    request_query: dict = {}
+    request_query: ImmutableMultiDict = ImmutableMultiDict({})
     request_body: Union[dict, List[dict]] = {}
     expected_response_body: Optional[dict] = None
     expected_status_code: int = 200
@@ -47,7 +48,7 @@ validate_test_cases = [
     pytest.param(
         ValidateParams(
             request_body={"b1": 1.4},
-            request_query={"q1": 1},
+            request_query=ImmutableMultiDict({"q1": 1}),
             expected_response_body={"q1": 1, "q2": "default", "b1": 1.4, "b2": None},
             response_model=ResponseModel,
             query_model=QueryModel,
@@ -58,7 +59,7 @@ validate_test_cases = [
     pytest.param(
         ValidateParams(
             request_body={"b1": 1.4},
-            request_query={"q1": 1},
+            request_query=ImmutableMultiDict({"q1": 1}),
             expected_response_body={"q1": 1, "q2": "default", "b1": 1.4},
             response_model=ResponseModel,
             query_model=QueryModel,
@@ -174,10 +175,9 @@ class TestValidate:
                 mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
                 == parameters.request_body
             )
-            assert (
-                mock_request.query_params.dict(exclude_none=True, exclude_defaults=True)
-                == parameters.request_query
-            )
+            assert mock_request.query_params.dict(
+                exclude_none=True, exclude_defaults=True
+            ) == parameters.request_query.to_dict(flat=True)
 
     @pytest.mark.usefixtures("request_ctx")
     def test_response_with_status(self):
@@ -230,7 +230,7 @@ class TestValidate:
 
     def test_valid_array_object_request_body(self, mocker, request_ctx):
         mock_request = mocker.patch.object(request_ctx, "request")
-        mock_request.args = {"q1": 1}
+        mock_request.args = ImmutableMultiDict({"q1": 1})
         mock_request.get_json = lambda: [
             {"b1": 1.0, "b2": "str1"},
             {"b1": 2.0, "b2": "str2"},
@@ -298,3 +298,50 @@ class TestIsIterableOfModels:
 
     def test_false_for_single_model(self):
         assert not is_iterable_of_models(RequestBodyModel(b1=12))
+
+
+convert_query_params_test_cases = [
+    pytest.param(
+        ImmutableMultiDict({"a": 1, "b": "b"}), {"a": 1, "b": "b"}, id="primitive types"
+    ),
+    pytest.param(
+        ImmutableMultiDict({"a": 1, "b": "b", "c": ["one"]}),
+        {"a": 1, "b": "b", "c": ["one"]},
+        id="one element in array",
+    ),
+    pytest.param(
+        ImmutableMultiDict({"a": 1, "b": "b", "c": ["one"], "d": [1]}),
+        {"a": 1, "b": "b", "c": ["one"], "d": [1]},
+        id="one element in arrays",
+    ),
+    pytest.param(
+        ImmutableMultiDict({"a": 1, "b": "b", "c": ["one"], "d": [1, 2, 3]}),
+        {"a": 1, "b": "b", "c": ["one"], "d": [1, 2, 3]},
+        id="one element in array, multiple in the other",
+    ),
+    pytest.param(
+        ImmutableMultiDict({"a": 1, "b": "b", "c": ["one", "two", "three"]}),
+        {"a": 1, "b": "b", "c": ["one", "two", "three"]},
+        id="multiple elements in array",
+    ),
+    pytest.param(
+        ImmutableMultiDict(
+            {"a": 1, "b": "b", "c": ["one", "two", "three"], "d": [1, 2, 3]}
+        ),
+        {"a": 1, "b": "b", "c": ["one", "two", "three"], "d": [1, 2, 3]},
+        id="multiple in both arrays",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "query_params,expected_result", convert_query_params_test_cases
+)
+def test_convert_query_params(query_params, expected_result):
+    class Model(BaseModel):
+        a: int
+        b: str
+        c: Optional[List[str]]
+        d: Optional[List[int]]
+
+    assert convert_query_params(query_params, Model) == expected_result

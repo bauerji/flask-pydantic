@@ -4,6 +4,7 @@ from typing import Optional, Callable, TypeVar, Any, Union, Iterable, Type, List
 from flask import request, jsonify, make_response, Response, current_app
 from pydantic import BaseModel, ValidationError
 
+from .converters import convert_query_params
 from .exceptions import (
     InvalidIterableOfModelsException,
     ManyModelValidationError,
@@ -126,7 +127,7 @@ def validate(
         def wrapper(*args, **kwargs):
             q, b, err = None, None, {}
             if query:
-                query_params = request.args
+                query_params = convert_query_params(request.args, query)
                 try:
                     q = query(**query_params)
                 except ValidationError as ve:
