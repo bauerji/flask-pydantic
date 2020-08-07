@@ -50,7 +50,7 @@ setup(
     long_description_content_type="text/markdown",
     packages=["flask_pydantic"],
     install_requires=list(get_install_requires()),
-    python_requires=">=3.7",
+    python_requires=">=3.6",
     classifiers=[
         "Environment :: Web Environment",
         "Intended Audience :: Developers",
