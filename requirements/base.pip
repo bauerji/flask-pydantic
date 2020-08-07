@@ -1,2 +1,3 @@
 Flask~=1.1.1
 pydantic~=1.3
+dataclasses~=0.7; python_version < '3.7'
