@@ -17,3 +17,8 @@
 ## 0.1.0 (2020-08-02)
 ### Features
 - add proper parsing and validation of array query parameters
+
+
+## 0.2.0 (2020-08-07)
+### Features
+- add support for python version `3.6`
