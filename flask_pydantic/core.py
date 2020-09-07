@@ -85,6 +85,8 @@ def validate(
         - request.query_params
         - request.body_params
 
+    Or directly as `kwargs`, if you define them in the decorated function.
+
     `exclude_none` whether to remove None fields from response
     `response_many` whether content of response consists of many objects
         (e. g. List[BaseModel]). Resulting response will be an array of serialized
@@ -92,32 +94,38 @@ def validate(
     `request_body_many` whether response body contains array of given model
         (request.body_params then contains list of models i. e. List[BaseModel])
 
-    example:
+    example::
 
-    from flask import request
-    from flask_pydantic import validate
-    from pydantic import BaseModel
+        from flask import request
+        from flask_pydantic import validate
+        from pydantic import BaseModel
 
-    class Query(BaseModel):
-        query: str
+        class Query(BaseModel):
+            query: str
 
-    class Body(BaseModel):
-        color: str
+        class Body(BaseModel):
+            color: str
 
-    class MyModel(BaseModel):
-        id: int
-        color: str
-        description: str
+        class MyModel(BaseModel):
+            id: int
+            color: str
+            description: str
 
-    ...
+        ...
 
-    @app.route("/")
-    @validate(query=Query, body=Body)
-    def test_route():
-        query = request.query_params.query
-        color = request.body_params.query
+        @app.route("/")
+        @validate(query=Query, body=Body)
+        def test_route():
+            query = request.query_params.query
+            color = request.body_params.query
 
-        return MyModel(...)
+            return MyModel(...)
+
+        @app.route("/kwargs")
+        @validate()
+        def test_route_kwargs(query:Query, body:Body):
+
+            return MyModel(...)
 
     -> that will render JSON response with serialized MyModel instance
     """
@@ -126,22 +134,26 @@ def validate(
         @wraps(func)
         def wrapper(*args, **kwargs):
             q, b, err = None, None, {}
-            if query:
-                query_params = convert_query_params(request.args, query)
+            query_in_kwargs = func.__annotations__.get("query")
+            query_model = query_in_kwargs or query
+            if query_model:
+                query_params = convert_query_params(request.args, query_model)
                 try:
-                    q = query(**query_params)
+                    q = query_model(**query_params)
                 except ValidationError as ve:
                     err["query_params"] = ve.errors()
-            if body:
+            body_in_kwargs = func.__annotations__.get("body")
+            body_model = body_in_kwargs or body
+            if body_model:
                 body_params = request.get_json()
                 if request_body_many:
                     try:
-                        b = validate_many_models(body, body_params)
+                        b = validate_many_models(body_model, body_params)
                     except ManyModelValidationError as e:
                         err["body_params"] = e.errors()
                 else:
                     try:
-                        b = body(**body_params)
+                        b = body_model(**body_params)
                     except TypeError:
                         content_type = request.headers.get("Content-Type", "").lower()
                         if content_type != "application/json":
@@ -152,6 +164,11 @@ def validate(
                         err["body_params"] = ve.errors()
             request.query_params = q
             request.body_params = b
+            if query_in_kwargs:
+                kwargs["query"] = q
+            if body_in_kwargs:
+                kwargs["body"] = b
+
             if err:
                 status_code = current_app.config.get(
                     "FLASK_PYDANTIC_VALIDATION_ERROR_STATUS_CODE", 400
