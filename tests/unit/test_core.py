@@ -179,6 +179,33 @@ class TestValidate:
                 exclude_none=True, exclude_defaults=True
             ) == parameters.request_query.to_dict(flat=True)
 
+    @pytest.mark.parametrize("parameters", validate_test_cases)
+    def test_validate_kwargs(self, mocker, request_ctx, parameters: ValidateParams):
+        mock_request = mocker.patch.object(request_ctx, "request")
+        mock_request.args = parameters.request_query
+        mock_request.get_json = lambda: parameters.request_body
+
+        def f(body: parameters.body_model, query: parameters.query_model):
+            return parameters.response_model(**body.dict(), **query.dict())
+
+        response = validate(
+            on_success_status=parameters.on_success_status,
+            exclude_none=parameters.exclude_none,
+            response_many=parameters.response_many,
+            request_body_many=parameters.request_body_many,
+        )(f)()
+
+        assert response.status_code == parameters.expected_status_code
+        assert response.json == parameters.expected_response_body
+        if 200 <= response.status_code < 300:
+            assert (
+                mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
+                == parameters.request_body
+            )
+            assert mock_request.query_params.dict(
+                exclude_none=True, exclude_defaults=True
+            ) == parameters.request_query.to_dict(flat=True)
+
     @pytest.mark.usefixtures("request_ctx")
     def test_response_with_status(self):
         expected_status_code = 201

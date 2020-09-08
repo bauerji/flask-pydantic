@@ -87,6 +87,12 @@ class TestSimple:
         assert response.json == expected_response
         assert response.status_code == expected_status
 
+    @pytest.mark.parametrize("query,body,expected_status,expected_response", test_cases)
+    def test_post_kwargs(self, client, query, body, expected_status, expected_response):
+        response = client.post(f"/search/kwargs{query}", json=body)
+        assert response.json == expected_response
+        assert response.status_code == expected_status
+
     def test_error_status_code(self, app, mocker, client):
         mocker.patch.dict(
             app.config, {"FLASK_PYDANTIC_VALIDATION_ERROR_STATUS_CODE": 422}

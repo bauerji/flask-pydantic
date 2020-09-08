@@ -85,4 +85,14 @@ def app(posts, response_model, query_model, body_model, post_model):
         ]
         return response_model(results=results[: query_params.limit], count=len(results))
 
+    @app.route("/search/kwargs", methods=["POST"])
+    @validate()
+    def post_kwargs(query: query_model, body: body_model):
+        results = [
+            post_model(**p)
+            for p in posts
+            if pass_search(p, body.search_term, body.exclude, query.min_views)
+        ]
+        return response_model(results=results[: query.limit], count=len(results))
+
     return app
