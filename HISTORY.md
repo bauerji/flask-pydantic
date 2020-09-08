@@ -1,5 +1,10 @@
 # Release history
 
+## 0.3.0 (2020-09-08)
+### Features
+- add possibility to specify models using keyword arguments
+
+
 ## 0.2.0 (2020-08-07)
 ### Features
 - add support for python version `3.6`
