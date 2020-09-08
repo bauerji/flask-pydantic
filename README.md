@@ -14,12 +14,18 @@ Flask extension for integration of the awesome [pydantic package](https://github
 
 ## Basics
 
-`validate` decorator validates query and body request parameters and makes them accessible via flask's `request` variable
+`validate` decorator validates query and body request parameters and makes them accessible two ways:
+
+1. [Using `validate` arguments, via flask's `request` variable](#basic-example)
 
 | **parameter type** | **`request` attribute name** |
 | :----------------: | :--------------------------: |
 |       query        |        `query_params`        |
 |        body        |        `body_params`         |
+
+2. [Using the decorated function argument parameters type hints](#using-the-decorated-function-kwargs)
+
+---
 
 - Success response status code can be modified via `on_success_status` parameter of `validate` decorator.
 - `response_many` parameter set to `True` enables serialization of multiple models (route function should therefore return iterable of models).
@@ -142,6 +148,29 @@ def post():
 ```
 
 Status code in case of validation error can be modified using `FLASK_PYDANTIC_VALIDATION_ERROR_STATUS_CODE` flask configuration variable.
+
+### Using the decorated function `kwargs`
+
+Instead of passing `body` and `query` to `validate`, it is possible to directly
+defined them by using type hinting in the decorated function.
+
+```python
+# necessary imports, app and models definition
+...
+
+@app.route("/", methods=["POST"])
+@validate()
+def post(body: BodyModel, query: QueryModel):
+    return ResponseModel(
+            id=id_,
+            age=query.age,
+            name=body.name,
+            nickname=body.nickname,
+        )
+```
+
+This way, the parsed data will be directly available in `body` and `query`.
+Furthermore, your IDE will be able to correctly type them.
 
 ### Example app
 

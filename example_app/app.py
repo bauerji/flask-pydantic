@@ -53,6 +53,24 @@ def post():
     )
 
 
+@app.route("/kwargs", methods=["POST"])
+@validate()
+def post(body: BodyModel, query: QueryModel):
+    """
+    Basic example with both query and body parameters, response object serialization.
+    This time using the decorated function kwargs `body` and `query` type hinting
+    """
+    # save model to DB
+    id_ = 3
+
+    return ResponseModel(
+        id=id_,
+        age=query.age,
+        name=body.name,
+        nickname=body.nickname,
+    )
+
+
 @app.route("/many", methods=["GET"])
 @validate(response_many=True)
 def get_many():
