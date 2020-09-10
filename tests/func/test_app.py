@@ -22,6 +22,33 @@ def app_with_array_route(app):
         )
 
 
+@pytest.fixture
+def app_with_camel_route(app):
+    def to_camel(x: str) -> str:
+        first, *rest = x.split("_")
+        return "".join([first] + [x.capitalize() for x in rest])
+
+    class RequestModel(BaseModel):
+        x: int
+        y: int
+
+    class ResultModel(BaseModel):
+        result_of_addition: int
+        result_of_multiplication: int
+
+        class Config:
+            alias_generator = to_camel
+            allow_population_by_field_name = True
+
+    @app.route("/compute", methods=["GET"])
+    @validate(response_by_alias=True)
+    def compute(query: RequestModel):
+        return ResultModel(
+            result_of_addition=query.x + query.y,
+            result_of_multiplication=query.x * query.y,
+        )
+
+
 test_cases = [
     pytest.param(
         "?limit=limit",
@@ -128,3 +155,17 @@ class TestArrayQueryParam:
     def test_correctly_returns_both_arrays(self, client):
         response = client.get("/arr?arr1=first&arr1=second&arr2=1&arr2=10")
         assert response.json == {"arr1": ["first", "second"], "arr2": [1, 10]}
+
+
+aliases_test_cases = [
+    pytest.param(1, 2, {"resultOfMultiplication": 2, "resultOfAddition": 3}),
+    pytest.param(10, 20, {"resultOfMultiplication": 200, "resultOfAddition": 30}),
+    pytest.param(999, 0, {"resultOfMultiplication": 0, "resultOfAddition": 999}),
+]
+
+
+@pytest.mark.usefixtures("app_with_camel_route")
+@pytest.mark.parametrize("x,y,expected_result", aliases_test_cases)
+def test_aliases(x, y, expected_result, client):
+    response = client.get(f"/compute?x={x}&y={y}")
+    assert response.json == expected_result
