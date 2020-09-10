@@ -63,12 +63,7 @@ def post(body: BodyModel, query: QueryModel):
     # save model to DB
     id_ = 3
 
-    return ResponseModel(
-        id=id_,
-        age=query.age,
-        name=body.name,
-        nickname=body.nickname,
-    )
+    return ResponseModel(id=id_, age=query.age, name=body.name, nickname=body.nickname)
 
 
 @app.route("/many", methods=["GET"])

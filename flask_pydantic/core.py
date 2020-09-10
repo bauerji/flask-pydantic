@@ -181,7 +181,11 @@ def validate(
             if response_many:
                 if is_iterable_of_models(res):
                     return make_json_response(
-                        res, on_success_status, exclude_none, True
+                        res,
+                        on_success_status,
+                        by_alias=response_by_alias,
+                        exclude_none=exclude_none,
+                        many=True,
                     )
                 else:
                     raise InvalidIterableOfModelsException(res)
