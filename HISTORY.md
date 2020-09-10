@@ -1,5 +1,10 @@
 # Release history
 
+## 0.4.0 (2020-09-10)
+### Features
+- add support for [alias feature](https://pydantic-docs.helpmanual.io/usage/model_config/#alias-generator) in response models
+
+
 ## 0.3.0 (2020-09-08)
 ### Features
 - add possibility to specify models using keyword arguments
