@@ -172,6 +172,33 @@ def post(body: BodyModel, query: QueryModel):
 This way, the parsed data will be directly available in `body` and `query`.
 Furthermore, your IDE will be able to correctly type them.
 
+### Model aliases
+
+Pydantic's [alias feature](https://pydantic-docs.helpmanual.io/usage/model_config/#alias-generator) is natively supported for query and body models.
+To use aliases in response modify response model
+```python
+def modify_key(text: str) -> str:
+    # do whatever you want with model keys
+    return text
+
+
+class MyModel(BaseModel):
+    ...
+    class Config:
+        alias_generator = modify_key
+        allow_population_by_field_name = True
+
+```
+
+and set `response_by_alias=True` in `validate` decorator
+```
+@app.route(...)
+@validate(response_by_alias=True)
+def my_route():
+    ...
+    return MyModel(...)
+```
+
 ### Example app
 
 For more complete examples see [example application](https://github.com/bauerji/flask_pydantic/tree/master/example_app).

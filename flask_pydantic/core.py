@@ -23,14 +23,15 @@ InputParams = TypeVar("InputParams")
 def make_json_response(
     content: Union[BaseModel, Iterable[BaseModel]],
     status_code: int,
+    by_alias: bool,
     exclude_none: bool = False,
     many: bool = False,
 ) -> Response:
     """serializes model, creates JSON response with given status code"""
     if many:
-        js = f"[{', '.join([model.json(exclude_none=exclude_none) for model in content])}]"
+        js = f"[{', '.join([model.json(exclude_none=exclude_none, by_alias=by_alias) for model in content])}]"
     else:
-        js = content.json(exclude_none=exclude_none)
+        js = content.json(exclude_none=exclude_none, by_alias=by_alias)
     response = make_response(js, status_code)
     response.mimetype = "application/json"
     return response
@@ -75,6 +76,7 @@ def validate(
     exclude_none: bool = False,
     response_many: bool = False,
     request_body_many: bool = False,
+    response_by_alias: bool = False,
 ):
     """
     Decorator for route methods which will validate query and body parameters
@@ -179,14 +181,21 @@ def validate(
             if response_many:
                 if is_iterable_of_models(res):
                     return make_json_response(
-                        res, on_success_status, exclude_none, True
+                        res,
+                        on_success_status,
+                        by_alias=response_by_alias,
+                        exclude_none=exclude_none,
+                        many=True,
                     )
                 else:
                     raise InvalidIterableOfModelsException(res)
 
             if isinstance(res, BaseModel):
                 return make_json_response(
-                    res, on_success_status, exclude_none=exclude_none
+                    res,
+                    on_success_status,
+                    exclude_none=exclude_none,
+                    by_alias=response_by_alias,
                 )
 
             if (
@@ -194,7 +203,12 @@ def validate(
                 and len(res) == 2
                 and isinstance(res[0], BaseModel)
             ):
-                return make_json_response(res[0], res[1], exclude_none=exclude_none)
+                return make_json_response(
+                    res[0],
+                    res[1],
+                    exclude_none=exclude_none,
+                    by_alias=response_by_alias,
+                )
 
             return res
 

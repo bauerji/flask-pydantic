@@ -72,6 +72,8 @@ def pass_search(
 @pytest.fixture
 def app(posts, response_model, query_model, body_model, post_model):
     app = Flask("test_app")
+    app.config["DEBUG"] = True
+    app.config["TESTING"] = True
 
     @app.route("/search", methods=["POST"])
     @validate(query=query_model, body=body_model)
