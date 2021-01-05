@@ -55,7 +55,7 @@ def post():
 
 @app.route("/kwargs", methods=["POST"])
 @validate()
-def post(body: BodyModel, query: QueryModel):
+def post_kwargs(body: BodyModel, query: QueryModel):
     """
     Basic example with both query and body parameters, response object serialization.
     This time using the decorated function kwargs `body` and `query` type hinting
