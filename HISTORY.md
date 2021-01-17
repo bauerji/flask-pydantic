@@ -1,5 +1,9 @@
 # Release history
 
+## 0.5.0 (2021-01-17)
+### Features
+- add `Flask` classifier
+
 ## 0.4.0 (2020-09-10)
 ### Features
 - add support for [alias feature](https://pydantic-docs.helpmanual.io/usage/model_config/#alias-generator) in response models
