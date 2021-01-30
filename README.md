@@ -55,24 +55,10 @@ class RequestBodyModel(BaseModel):
   name: str
   nickname: Optional[str]
 
-class ResponseModel(BaseModel):
-  id: int
-  age: int
-  name: str
-  nickname: Optional[str]
-
-@app.route("/", methods=["POST"])
-@validate()
-def post(body:RequestBodyModel): 
-  name = body.name
-  nickname = body.nickname
-  return ResponseModel(
-    name=name, nickname=nickname,id=0, age=1000
-    )
-
 class QueryModel(BaseModel):
   age: int
 
+# Example 1: query parameters only
 @app.route("/", methods=["GET"])
 @validate()
 def get(query:QueryModel):
@@ -82,6 +68,23 @@ def get(query:QueryModel):
     id=0, name="abc", nickname="123"
     )
 
+class ResponseModel(BaseModel):
+  id: int
+  age: int
+  name: str
+  nickname: Optional[str]
+
+# Example2: request body only
+@app.route("/", methods=["POST"])
+@validate()
+def post(body:RequestBodyModel): 
+  name = body.name
+  nickname = body.nickname
+  return ResponseModel(
+    name=name, nickname=nickname,id=0, age=1000
+    )
+
+# Example 3: both query paramters and request body
 @app.route("/both", methods=["POST"])
 @validate()
 def get_and_post(body:RequestBodyModel,query:QueryModel):
@@ -129,7 +132,7 @@ app.run(debug=True)
     ```
 - likewise for body parameters
 - example call with valid parameters:
-  `curl --location --request GET 'http://127.0.0.1:5000/?age=20'`
+  `curl --location --request GET 'http://127.0.0.1:5000/?age=20'`  
 
 -> `{"id": 0, "age": 20, "name": "abc", "nickname": "123"}`
 
