@@ -36,7 +36,7 @@ For more details see in-code docstring or example app.
 
 ## Usage
 
-### Basic example
+### Example 1: Query parameters only
 
 Simply use `validate` decorator on route function.
 
@@ -68,33 +68,7 @@ def get(query:QueryModel):
     id=0, name="abc", nickname="123"
     )
 
-class ResponseModel(BaseModel):
-  id: int
-  age: int
-  name: str
-  nickname: Optional[str]
-
-# Example2: request body only
-@app.route("/", methods=["POST"])
-@validate()
-def post(body:RequestBodyModel): 
-  name = body.name
-  nickname = body.nickname
-  return ResponseModel(
-    name=name, nickname=nickname,id=0, age=1000
-    )
-
-# Example 3: both query paramters and request body
-@app.route("/both", methods=["POST"])
-@validate()
-def get_and_post(body:RequestBodyModel,query:QueryModel):
-  name = body.name # From request body
-  nickname = body.nickname # From request body
-  age = query.age # from query parameters
-  return ResponseModel(
-    age=age, name=name, nickname=nickname,
-    id=0
-  )
+# Example 2 and 3 should be here
 
 app.run(debug=True)
 ```
@@ -135,6 +109,49 @@ app.run(debug=True)
   `curl --location --request GET 'http://127.0.0.1:5000/?age=20'`  
 
 -> `{"id": 0, "age": 20, "name": "abc", "nickname": "123"}`
+
+
+
+### Example 2: Request body only
+
+```python
+class ResponseModel(BaseModel):
+  id: int
+  age: int
+  name: str
+  nickname: Optional[str]
+
+# Example2: request body only
+@app.route("/", methods=["POST"])
+@validate()
+def post(body:RequestBodyModel): 
+  name = body.name
+  nickname = body.nickname
+  return ResponseModel(
+    name=name, nickname=nickname,id=0, age=1000
+    )
+```
+
+### Example 3: BOTH query paramaters and request body
+
+```python
+# Example 3: both query paramters and request body
+@app.route("/both", methods=["POST"])
+@validate()
+def get_and_post(body:RequestBodyModel,query:QueryModel):
+  name = body.name # From request body
+  nickname = body.nickname # From request body
+  age = query.age # from query parameters
+  return ResponseModel(
+    age=age, name=name, nickname=nickname,
+    id=0
+  )
+```
+
+
+
+
+
 
 ### Modify response status code
 
