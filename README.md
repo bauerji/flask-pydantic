@@ -51,12 +51,14 @@ from flask_pydantic import validate
 
 app = Flask("flask_pydantic_app")
 
-class RequestBodyModel(BaseModel):
-  name: str
-  nickname: Optional[str]
-
 class QueryModel(BaseModel):
   age: int
+
+class ResponseModel(BaseModel):
+  id: int
+  age: int
+  name: str
+  nickname: Optional[str]
 
 # Example 1: query parameters only
 @app.route("/", methods=["GET"])
@@ -115,9 +117,7 @@ app.run(debug=True)
 ### Example 2: Request body only
 
 ```python
-class ResponseModel(BaseModel):
-  id: int
-  age: int
+class RequestBodyModel(BaseModel):
   name: str
   nickname: Optional[str]
 
