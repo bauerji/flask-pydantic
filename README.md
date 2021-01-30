@@ -51,68 +51,43 @@ from flask_pydantic import validate
 
 app = Flask("flask_pydantic_app")
 
-# Request body expectations as a pydantic model
 class RequestBodyModel(BaseModel):
   name: str
   nickname: Optional[str]
 
-# API response expectations as a pydantic model
 class ResponseModel(BaseModel):
   id: int
   age: int
   name: str
   nickname: Optional[str]
 
-"""
-Example 1: 
-receive inputs from request body
-"""
 @app.route("/", methods=["POST"])
-@validate() # To apply flask_pydantic to this endpoint
-def post(body:RequestBodyModel): # expected request body
+@validate()
+def post(body:RequestBodyModel): 
   name = body.name
   nickname = body.nickname
-  # Now 'name' and 'nickname' are 
-  # received, validated and sanitized from the request body
-  # save model to DB, and get 'id' and 'age'
   return ResponseModel(
-    name=name, nickname=nickname,
-    id=0, age=1000
+    name=name, nickname=nickname,id=0, age=1000
     )
 
-# query_paramaters expectations as a pydantic model
 class QueryModel(BaseModel):
   age: int
 
-"""
-Example 2: 
-receive inputs from query paramaters
-"""
 @app.route("/", methods=["GET"])
 @validate()
 def get(query:QueryModel):
   age = query.age
-  # Now 'age' is received and sanitized from the query paramters
-  # save model to DB, and get 'id','name' and 'nickname'
   return ResponseModel(
     age=age,
     id=0, name="abc", nickname="123"
     )
 
-"""
-Example 3: 
-receive inputs from BOTH:
-  1) request_body 
-  2) query paramaters
-In the same request
-"""
 @app.route("/both", methods=["POST"])
 @validate()
 def get_and_post(body:RequestBodyModel,query:QueryModel):
   name = body.name # From request body
   nickname = body.nickname # From request body
   age = query.age # from query parameters
-  # save model to db, and get 'id'
   return ResponseModel(
     age=age, name=name, nickname=nickname,
     id=0
