@@ -74,15 +74,11 @@ def post(body:RequestBodyModel): # expected request body
   nickname = body.nickname
   # Now 'name' and 'nickname' are 
   # received, validated and sanitized from the request body
-
-  # save model to DB
-  id = 0
-  age = 1000 # we should have got them from db
-
+  # save model to DB, and get 'id' and 'age'
   return ResponseModel(
-    id=id, age=age, name=name, nickname=nickname
+    name=name, nickname=nickname,
+    id=0, age=1000
     )
-
 
 # query_paramaters expectations as a pydantic model
 class QueryModel(BaseModel):
@@ -96,15 +92,11 @@ receive inputs from query paramaters
 @validate()
 def get(query:QueryModel):
   age = query.age
-  # Now 'age' is 
-  # received and sanitized from the query paramters
-
-  # save model to DB
-  id = 0 # we should have got it from db
-  name = "abc"
-  nickname = "123"
+  # Now 'age' is received and sanitized from the query paramters
+  # save model to DB, and get 'id','name' and 'nickname'
   return ResponseModel(
-    id=id, age=age, name=name, nickname=nickname
+    age=age,
+    id=0, name="abc", nickname="123"
     )
 
 """
@@ -117,18 +109,13 @@ In the same request
 @app.route("/both", methods=["POST"])
 @validate()
 def get_and_post(body:RequestBodyModel,query:QueryModel):
-  # From request body
-  name = body.name
-  nickname = body.nickname
-  
-  # from query parameters
-  age = query.age
-
-  # save model to DB
-  id = 0 # we should have got it from db
-
+  name = body.name # From request body
+  nickname = body.nickname # From request body
+  age = query.age # from query parameters
+  # save model to db, and get 'id'
   return ResponseModel(
-    id=id, age=age, name=name, nickname=nickname,
+    age=age, name=name, nickname=nickname,
+    id=0
   )
 
 app.run(debug=True)
