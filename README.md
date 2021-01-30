@@ -75,6 +75,11 @@ def get(query:QueryModel):
 app.run(debug=True)
 ```
 
+<a href="blob/master/example_app/example.py">
+  This is the full example
+</a>
+
+
 - `age` query parameter is a required `int`
   - `curl --location --request GET 'http://127.0.0.1:5000/'`
   - if none is provided the response contains:
@@ -132,6 +137,10 @@ def post(body:RequestBodyModel):
     )
 ```
 
+<a href="blob/master/example_app/example.py">
+  This is the full example
+</a>
+
 ### Example 3: BOTH query paramaters and request body
 
 ```python
@@ -148,7 +157,9 @@ def get_and_post(body:RequestBodyModel,query:QueryModel):
   )
 ```
 
-
+<a href="blob/master/example_app/example.py">
+  This is the full example
+</a>
 
 
 
