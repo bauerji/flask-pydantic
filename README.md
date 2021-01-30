@@ -51,35 +51,35 @@ from pydantic import BaseModel
 
 app = Flask("flask_pydantic_app")
 
-
-class QueryModel(BaseModel):
-    age: int
-
-
+# Defening your expectations of the rquest body, as a pydantic model
 class BodyModel(BaseModel):
     name: str
     nickname: Optional[str]
 
-
+# Defening your expectations of the API response, as a pydantic model
 class ResponseModel(BaseModel):
     id: int
     age: int
     name: str
     nickname: Optional[str]
 
-
+# First Endpoint, Receive request body
 @app.route("/", methods=["POST"])
-@validate(body=BodyModel, query=QueryModel)
-def post():
+@validate()
+def post(body:BodyModel):
     # save model to DB
-    id_ = ...
+    id_ = 1 # we should have got it from db
+    age_ = 1 # we should have got it from db
 
     return ResponseModel(
-        id=id_,
-        age=request.query_params.age,
-        name=request.body_params.name,
-        nickname=request.body_params.nickname,
+        id=id_, 
+        age=age_,
+        name=body.name,
+        nickname=body.nickname,
     )
+
+class QueryModel(BaseModel):
+    age: int
 
 app.run(debug=True)
 ```
