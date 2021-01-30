@@ -76,8 +76,8 @@ def post(body:RequestBodyModel): # expected request body
   # received, validated and sanitized from the request body
 
   # save model to DB
-  id = 1
-  age = 2 # we should have got them from db
+  id = 0
+  age = 1000 # we should have got them from db
 
   return ResponseModel(
     id=id, age=age, name=name, nickname=nickname
@@ -100,9 +100,33 @@ def get(query:QueryModel):
   # received and sanitized from the query paramters
 
   # save model to DB
-  id = 1 # we should have got it from db
+  id = 0 # we should have got it from db
   name = "abc"
   nickname = "123"
+  return ResponseModel(
+    id=id, age=age, name=name, nickname=nickname
+    )
+
+"""
+Example 3: 
+receive inputs from BOTH:
+  1) request_body 
+  2) query paramaters
+In the same request
+"""
+@app.route("/both", methods=["POST"])
+@validate()
+def get_and_post(body:RequestBodyModel,query:QueryModel):
+  # From request body
+  name = body.name
+  nickname = body.nickname
+  
+  # from query parameters
+  age = query.age
+
+  # save model to DB
+  id = 0 # we should have got it from db
+
   return ResponseModel(
     id=id, age=age, name=name, nickname=nickname,
   )
