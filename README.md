@@ -44,29 +44,53 @@ Simply use `validate` decorator on route function.
 
 ```python
 from typing import Optional
-
 from flask import Flask, request
-from flask_pydantic import validate
 from pydantic import BaseModel
+
+from flask_pydantic import validate
 
 app = Flask("flask_pydantic_app")
 
-# Defening your expectations of the rquest body, as a pydantic model
+# Request body expectation as a pydantic model
 class BodyModel(BaseModel):
-    name: str
-    nickname: Optional[str]
+  name: str
+  nickname: Optional[str]
 
-# Defening your expectations of the API response, as a pydantic model
+# API response expectation as a pydantic model
 class ResponseModel(BaseModel):
-    id: int
-    age: int
-    name: str
-    nickname: Optional[str]
+  id: int
+  age: int
+  name: str
+  nickname: Optional[str]
 
-# First Endpoint, Receive request body
+"""
+Example 1: 
+receive inputs from request body
+"""
 @app.route("/", methods=["POST"])
+@validate() # Welcome to flask_pydantic
+def post(body:BodyModel): # expected request body
+  name = body.name
+  nickname = body.nickname
+  # Now 'name' and 'nickname' are 
+  # received and, validated and sanitized from the request body
+
+  # save model to DB
+  id = 1 # we should have got it from db
+  age = 1 # we should have got it from db
+
+  return ResponseModel(
+    id=id, age=age, name=name,
+    nickname=nickname,
+  )
+
+class QueryModel(BaseModel):
+  age: int
+
+# First example Endpoint, Receive request body
+@app.route("/", methods=["GET"])
 @validate()
-def post(body:BodyModel):
+def get(body:BodyModel):
   name = body.name
   nickname = body.nickname
   # Now 'name' and 'nickname' are 
@@ -82,8 +106,6 @@ def post(body:BodyModel):
     name=name,
     nickname=nickname,
   )
-class QueryModel(BaseModel):
-    age: int
 
 app.run(debug=True)
 ```
