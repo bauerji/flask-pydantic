@@ -80,6 +80,8 @@ def post():
         name=request.body_params.name,
         nickname=request.body_params.nickname,
     )
+
+app.run(debug=True)
 ```
 
 - `age` query parameter is a required `int`
