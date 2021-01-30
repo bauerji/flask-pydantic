@@ -51,12 +51,12 @@ from flask_pydantic import validate
 
 app = Flask("flask_pydantic_app")
 
-# Request body expectation as a pydantic model
-class BodyModel(BaseModel):
+# Request body expectations as a pydantic model
+class RequestBodyModel(BaseModel):
   name: str
   nickname: Optional[str]
 
-# API response expectation as a pydantic model
+# API response expectations as a pydantic model
 class ResponseModel(BaseModel):
   id: int
   age: int
@@ -68,21 +68,19 @@ Example 1:
 receive inputs from request body
 """
 @app.route("/", methods=["POST"])
-@validate() # Welcome to flask_pydantic
-def post(body:BodyModel): # expected request body
-  name = body.name
-  nickname = body.nickname
+@validate() # To apply flask_pydantic to this endpoint
+def post(body:RequestBodyModel): # expected request body
+  name_ = body.name
+  nickname_ = body.nickname
   # Now 'name' and 'nickname' are 
-  # received and, validated and sanitized from the request body
+  # received, validated and sanitized from the request body
 
   # save model to DB
-  id = 1 # we should have got it from db
-  age = 1 # we should have got it from db
+  id_ = 1; age_ = 1 # we should have got them from db
 
   return ResponseModel(
-    id=id, age=age, name=name,
-    nickname=nickname,
-  )
+    id=id_, age=age_, name=name_, nickname=nickname_
+    )
 
 class QueryModel(BaseModel):
   age: int
@@ -90,7 +88,7 @@ class QueryModel(BaseModel):
 # First example Endpoint, Receive request body
 @app.route("/", methods=["GET"])
 @validate()
-def get(body:BodyModel):
+def get(body:RequestBodyModel):
   name = body.name
   nickname = body.nickname
   # Now 'name' and 'nickname' are 
