@@ -67,17 +67,21 @@ class ResponseModel(BaseModel):
 @app.route("/", methods=["POST"])
 @validate()
 def post(body:BodyModel):
-    # save model to DB
-    id_ = 1 # we should have got it from db
-    age_ = 1 # we should have got it from db
+  name = body.name
+  nickname = body.nickname
+  # Now 'name' and 'nickname' are 
+  # received and sanitized from the request body
 
-    return ResponseModel(
-        id=id_, 
-        age=age_,
-        name=body.name,
-        nickname=body.nickname,
-    )
+  # save model to DB
+  id = 1 # we should have got it from db
+  age = 1 # we should have got it from db
 
+  return ResponseModel(
+    id=id, 
+    age=age,
+    name=name,
+    nickname=nickname,
+  )
 class QueryModel(BaseModel):
     age: int
 
