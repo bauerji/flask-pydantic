@@ -97,6 +97,7 @@ app.run(debug=True)
 ```
 
 - `age` query parameter is a required `int`
+  - `curl --location --request GET 'http://127.0.0.1:5000/'`
   - if none is provided the response contains:
     ```json
     {
@@ -112,6 +113,7 @@ app.run(debug=True)
     }
     ```
   - for incompatible type (e. g. string `/?age=not_a_number`)
+  - `curl --location --request GET 'http://127.0.0.1:5000/?age=abc'`
     ```json
     {
       "validation_error": {
@@ -127,9 +129,9 @@ app.run(debug=True)
     ```
 - likewise for body parameters
 - example call with valid parameters:
-  `curl -XPOST http://localhost:5000/?age=20 --data '{"name": "John Doe"}' -H 'Content-Type: application/json'`
+  `curl --location --request GET 'http://127.0.0.1:5000/?age=20'`
 
--> `{"id": 2, "age": 20, "name": "John Doe", "nickname": null}`
+-> `{"id": 0, "age": 20, "name": "abc", "nickname": "123"}`
 
 ### Modify response status code
 
