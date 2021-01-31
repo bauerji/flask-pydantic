@@ -1,14 +1,23 @@
 from functools import wraps
-from typing import Optional, Callable, TypeVar, Any, Union, Iterable, Type, List
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+)
 
-from flask import request, jsonify, make_response, Response, current_app
+from flask import Response, current_app, jsonify, make_response, request
 from pydantic import BaseModel, ValidationError
 
 from .converters import convert_query_params
 from .exceptions import (
     InvalidIterableOfModelsException,
-    ManyModelValidationError,
     JsonBodyParsingError,
+    ManyModelValidationError,
 )
 
 try:
@@ -50,6 +59,14 @@ def is_iterable_of_models(content: Any) -> bool:
         return all(isinstance(obj, BaseModel) for obj in content)
     except TypeError:
         return False
+
+
+def parse_custom_root_type(model: Type[BaseModel], obj):
+    return model.parse_obj(obj).__root__
+
+
+def has_custom_root_type(model: Type[BaseModel], obj):
+    return isinstance(obj, list) and "__root__" in model.__fields__
 
 
 def validate_many_models(model: Type[BaseModel], content: Any) -> List[BaseModel]:
@@ -148,7 +165,9 @@ def validate(
             body_model = body_in_kwargs or body
             if body_model:
                 body_params = request.get_json()
-                if request_body_many:
+                if "__root__" in body_model.__fields__:
+                    b = body_model(__root__=body_params).__root__
+                elif request_body_many:
                     try:
                         b = validate_many_models(body_model, body_params)
                     except ManyModelValidationError as e:

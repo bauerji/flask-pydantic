@@ -3,6 +3,7 @@ from typing import List, Optional
 import pytest
 from flask import request
 from pydantic import BaseModel
+
 from flask_pydantic import validate
 
 
@@ -16,10 +17,24 @@ def app_with_array_route(app):
     @app.route("/arr", methods=["GET"])
     @validate(query=ArrayModel, exclude_none=True)
     def pass_array():
-        print(request.query_params)
         return ArrayModel(
             arr1=request.query_params.arr1, arr2=request.query_params.arr2
         )
+
+
+@pytest.fixture
+def app_with_custom_root_type(app):
+    class Person(BaseModel):
+        name: str
+        age: Optional[int]
+
+    class PersonBulk(BaseModel):
+        __root__: List[Person]
+
+    @app.route("/root_type", methods=["POST"])
+    @validate()
+    def root_type(body: PersonBulk):
+        return {"number": len(body)}
 
 
 @pytest.fixture
@@ -126,6 +141,15 @@ class TestSimple:
         )
         response = client.post("/search?limit=2", json={})
         assert response.status_code == 422
+
+
+@pytest.mark.usefixtures("app_with_custom_root_type")
+def test_custom_root_types(client):
+    response = client.post(
+        "/root_type",
+        json=[{"name": "Joshua Bardwell", "age": 46}, {"name": "Andrew Cambden"}],
+    )
+    assert response.json == {"number": 2}
 
 
 @pytest.mark.usefixtures("app_with_array_route")
