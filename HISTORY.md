@@ -1,5 +1,10 @@
 # Release history
 
+## 0.6.0 (2021-01-31)
+### Features
+- improve README, example app
+
+
 ## 0.5.0 (2021-01-17)
 ### Features
 - add `Flask` classifier
