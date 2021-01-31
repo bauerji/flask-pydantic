@@ -36,7 +36,7 @@ For more details see in-code docstring or example app.
 
 ## Usage
 
-### Basic example
+### Example 1: Query parameters only
 
 Simply use `validate` decorator on route function.
 
@@ -44,45 +44,44 @@ Simply use `validate` decorator on route function.
 
 ```python
 from typing import Optional
-
 from flask import Flask, request
-from flask_pydantic import validate
 from pydantic import BaseModel
+
+from flask_pydantic import validate
 
 app = Flask("flask_pydantic_app")
 
-
 class QueryModel(BaseModel):
-    age: int
-
-
-class BodyModel(BaseModel):
-    name: str
-    nickname: Optional[str]
-
+  age: int
 
 class ResponseModel(BaseModel):
-    id: int
-    age: int
-    name: str
-    nickname: Optional[str]
+  id: int
+  age: int
+  name: str
+  nickname: Optional[str]
 
-
-@app.route("/", methods=["POST"])
-@validate(body=BodyModel, query=QueryModel)
-def post():
-    # save model to DB
-    id_ = ...
-
-    return ResponseModel(
-        id=id_,
-        age=request.query_params.age,
-        name=request.body_params.name,
-        nickname=request.body_params.nickname,
+# Example 1: query parameters only
+@app.route("/", methods=["GET"])
+@validate()
+def get(query:QueryModel):
+  age = query.age
+  return ResponseModel(
+    age=age,
+    id=0, name="abc", nickname="123"
     )
+
+# Example 2 and 3 should be here
+
+app.run(debug=True)
 ```
 
+<a href="blob/master/example_app/example.py">
+  This is the full example
+</a>
+
+
 - `age` query parameter is a required `int`
+  - `curl --location --request GET 'http://127.0.0.1:5000/'`
   - if none is provided the response contains:
     ```json
     {
@@ -98,6 +97,7 @@ def post():
     }
     ```
   - for incompatible type (e. g. string `/?age=not_a_number`)
+  - `curl --location --request GET 'http://127.0.0.1:5000/?age=abc'`
     ```json
     {
       "validation_error": {
@@ -113,9 +113,56 @@ def post():
     ```
 - likewise for body parameters
 - example call with valid parameters:
-  `curl -XPOST http://localhost:5000/?age=20 --data '{"name": "John Doe"}' -H 'Content-Type: application/json'`
+  `curl --location --request GET 'http://127.0.0.1:5000/?age=20'`  
 
--> `{"id": 2, "age": 20, "name": "John Doe", "nickname": null}`
+-> `{"id": 0, "age": 20, "name": "abc", "nickname": "123"}`
+
+
+
+### Example 2: Request body only
+
+```python
+class RequestBodyModel(BaseModel):
+  name: str
+  nickname: Optional[str]
+
+# Example2: request body only
+@app.route("/", methods=["POST"])
+@validate()
+def post(body:RequestBodyModel): 
+  name = body.name
+  nickname = body.nickname
+  return ResponseModel(
+    name=name, nickname=nickname,id=0, age=1000
+    )
+```
+
+<a href="blob/master/example_app/example.py">
+  This is the full example
+</a>
+
+### Example 3: BOTH query paramaters and request body
+
+```python
+# Example 3: both query paramters and request body
+@app.route("/both", methods=["POST"])
+@validate()
+def get_and_post(body:RequestBodyModel,query:QueryModel):
+  name = body.name # From request body
+  nickname = body.nickname # From request body
+  age = query.age # from query parameters
+  return ResponseModel(
+    age=age, name=name, nickname=nickname,
+    id=0
+  )
+```
+
+<a href="blob/master/example_app/example.py">
+  This is the full example
+</a>
+
+
+
 
 ### Modify response status code
 
