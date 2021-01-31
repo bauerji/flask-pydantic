@@ -3,6 +3,7 @@
 ## 0.6.0 (2021-01-31)
 ### Features
 - improve README, example app
+- add support for pydantic's [custom root types](https://pydantic-docs.helpmanual.io/usage/models/#custom-root-types)
 
 
 ## 0.5.0 (2021-01-17)
