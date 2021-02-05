@@ -82,4 +82,7 @@ curl --location --request POST 'http://127.0.0.1:5000/both?age=40' \
 --header 'Content-Type: application/json' \
 --data-raw '{"name":123}'
 """
-app.run(debug=True)
+
+
+if __name__ == '__main__':
+    app.run()

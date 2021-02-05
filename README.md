@@ -69,14 +69,10 @@ def get(query:QueryModel):
     age=age,
     id=0, name="abc", nickname="123"
     )
-
-# Example 2 and 3 should be here
-
-app.run(debug=True)
 ```
 
 <a href="blob/master/example_app/example.py">
-  This is the full example
+  See the full example app here
 </a>
 
 
@@ -138,7 +134,7 @@ def post(body:RequestBodyModel):
 ```
 
 <a href="blob/master/example_app/example.py">
-  This is the full example
+  See the full example app here
 </a>
 
 ### Example 3: BOTH query paramaters and request body
@@ -158,7 +154,7 @@ def get_and_post(body:RequestBodyModel,query:QueryModel):
 ```
 
 <a href="blob/master/example_app/example.py">
-  This is the full example
+  See the full example app here
 </a>
 
 
