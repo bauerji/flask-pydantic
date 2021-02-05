@@ -84,5 +84,5 @@ curl --location --request POST 'http://127.0.0.1:5000/both?age=40' \
 """
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run()
