@@ -1,5 +1,10 @@
 # Release history
 
+## 0.6.1 (2021-02-18)
+### Bugfixes
+- parsing of query parameters in older versions of python 3.6
+
+
 ## 0.6.0 (2021-01-31)
 ### Features
 - improve README, example app
