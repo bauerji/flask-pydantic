@@ -130,3 +130,6 @@ dmypy.json
 
 # VS Code settings
 .vscode
+
+docker-compose.yaml
+.dockerignore

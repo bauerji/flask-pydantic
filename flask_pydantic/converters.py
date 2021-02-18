@@ -15,7 +15,7 @@ def convert_query_params(
     :return: resulting parameters
     """
     return {
-        **query_params,
+        **query_params.to_dict(),
         **{
             key: value
             for key, value in query_params.to_dict(flat=False).items()
