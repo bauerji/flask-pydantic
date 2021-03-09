@@ -1,5 +1,9 @@
 # Release history
 
+## 0.6.2 (2021-03-09)
+### Bugfixes
+- fix type annotations of decorated method
+
 ## 0.6.1 (2021-02-18)
 ### Bugfixes
 - parsing of query parameters in older versions of python 3.6
