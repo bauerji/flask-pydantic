@@ -1,14 +1,5 @@
 from functools import wraps
-from typing import (
-    Any,
-    Callable,
-    Iterable,
-    List,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Iterable, List, Optional, Type, Union
 
 from flask import Response, current_app, jsonify, make_response, request
 from pydantic import BaseModel, ValidationError
@@ -24,9 +15,6 @@ try:
     from flask_restful import original_flask_make_response as make_response
 except ImportError:
     pass
-
-
-InputParams = TypeVar("InputParams")
 
 
 def make_json_response(
