@@ -1,5 +1,8 @@
 # Release history
 
+## 0.6.3 (2021-03-26)
+- do pin specific versions of required packages
+
 ## 0.6.2 (2021-03-09)
 ### Bugfixes
 - fix type annotations of decorated method
