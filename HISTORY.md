@@ -1,5 +1,9 @@
 # Release history
 
+## 0.7.0 (2021-04-05)
+## Features
+- add support for URL path parameters parsing and validation
+
 ## 0.6.3 (2021-03-26)
 - do pin specific versions of required packages
 
