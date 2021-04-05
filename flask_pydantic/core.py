@@ -1,8 +1,9 @@
 from functools import wraps
-from typing import Any, Callable, Iterable, List, Optional, Type, Union
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Type, Union
 
 from flask import Response, current_app, jsonify, make_response, request
 from pydantic import BaseModel, ValidationError
+from pydantic.tools import parse_obj_as
 
 from .converters import convert_query_params
 from .exceptions import (
@@ -74,6 +75,23 @@ def validate_many_models(model: Type[BaseModel], content: Any) -> List[BaseModel
         raise ManyModelValidationError(ve.errors())
 
 
+def validate_path_params(func: Callable, kwargs: dict) -> Tuple[dict, list]:
+    errors = []
+    validated = {}
+    for name, type_ in func.__annotations__.items():
+        if name in {"query", "body"}:
+            continue
+        try:
+            value = parse_obj_as(type_, kwargs.get(name))
+            validated[name] = value
+        except ValidationError as e:
+            err = e.errors()[0]
+            err["loc"] = [name]
+            errors.append(err)
+    kwargs = {**kwargs, **validated}
+    return kwargs, errors
+
+
 def validate(
     body: Optional[Type[BaseModel]] = None,
     query: Optional[Type[BaseModel]] = None,
@@ -141,6 +159,9 @@ def validate(
         @wraps(func)
         def wrapper(*args, **kwargs):
             q, b, err = None, None, {}
+            kwargs, path_err = validate_path_params(func, kwargs)
+            if path_err:
+                err["path_params"] = path_err
             query_in_kwargs = func.__annotations__.get("query")
             query_model = query_in_kwargs or query
             if query_model:

@@ -13,6 +13,7 @@ Flask extension for integration of the awesome [pydantic package](https://github
 `python3 -m pip install Flask-Pydantic`
 
 ## Basics
+### URL query and body parameters
 
 `validate` decorator validates query and body request parameters and makes them accessible two ways:
 
@@ -25,7 +26,21 @@ Flask extension for integration of the awesome [pydantic package](https://github
 
 2. [Using the decorated function argument parameters type hints](#using-the-decorated-function-kwargs)
 
+### URL path parameter
+
+If you use annotated path URL path parameters as follows
+```python
+
+@app.route("/users/<user_id>", methods=["GET"])
+@validate()
+def get_user(user_id: str):
+    pass
+```
+flask_pydantic will parse and validate `user_id` variable in the same manner as for body and query parameters.
+
 ---
+
+### Additional `validate` arguments
 
 - Success response status code can be modified via `on_success_status` parameter of `validate` decorator.
 - `response_many` parameter set to `True` enables serialization of multiple models (route function should therefore return iterable of models).
@@ -63,7 +78,7 @@ class ResponseModel(BaseModel):
 # Example 1: query parameters only
 @app.route("/", methods=["GET"])
 @validate()
-def get(query:QueryModel):
+def get(query: QueryModel):
   age = query.age
   return ResponseModel(
     age=age,
@@ -114,8 +129,26 @@ def get(query:QueryModel):
 -> `{"id": 0, "age": 20, "name": "abc", "nickname": "123"}`
 
 
+### Example 2: URL path parameter
 
-### Example 2: Request body only
+```python
+@app.route("/character/<character_id>/", methods=["GET"])
+@validate()
+def get_character(character_id: int):
+    characters = [
+        ResponseModel(id=1, age=95, name="Geralt", nickname="White Wolf"),
+        ResponseModel(id=2, age=45, name="Triss Merigold", nickname="sorceress"),
+        ResponseModel(id=3, age=42, name="Julian Alfred Pankratz", nickname="Jaskier"),
+        ResponseModel(id=4, age=101, name="Yennefer", nickname="Yenn"),
+    ]
+    try:
+        return characters[character_id]
+    except IndexError:
+        return {"error": "Not found"}, 400
+```
+
+
+### Example 3: Request body only
 
 ```python
 class RequestBodyModel(BaseModel):
@@ -125,7 +158,7 @@ class RequestBodyModel(BaseModel):
 # Example2: request body only
 @app.route("/", methods=["POST"])
 @validate()
-def post(body:RequestBodyModel): 
+def post(body: RequestBodyModel): 
   name = body.name
   nickname = body.nickname
   return ResponseModel(
@@ -137,13 +170,13 @@ def post(body:RequestBodyModel):
   See the full example app here
 </a>
 
-### Example 3: BOTH query paramaters and request body
+### Example 4: BOTH query paramaters and request body
 
 ```python
 # Example 3: both query paramters and request body
 @app.route("/both", methods=["POST"])
 @validate()
-def get_and_post(body:RequestBodyModel,query:QueryModel):
+def get_and_post(body: RequestBodyModel,query: QueryModel):
   name = body.name # From request body
   nickname = body.nickname # From request body
   age = query.age # from query parameters

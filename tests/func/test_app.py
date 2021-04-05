@@ -23,6 +23,28 @@ def app_with_array_route(app):
 
 
 @pytest.fixture
+def app_with_int_path_param_route(app):
+    class IdObj(BaseModel):
+        id: int
+
+    @app.route("/path_param/<obj_id>/", methods=["GET"])
+    @validate()
+    def int_path_param(obj_id: int):
+        return IdObj(id=obj_id)
+
+
+@pytest.fixture
+def app_with_untyped_path_param_route(app):
+    class IdObj(BaseModel):
+        id: str
+
+    @app.route("/path_param/<obj_id>/", methods=["GET"])
+    @validate()
+    def int_path_param(obj_id):
+        return IdObj(id=obj_id)
+
+
+@pytest.fixture
 def app_with_custom_root_type(app):
     class Person(BaseModel):
         name: str
@@ -193,3 +215,46 @@ aliases_test_cases = [
 def test_aliases(x, y, expected_result, client):
     response = client.get(f"/compute?x={x}&y={y}")
     assert response.json == expected_result
+
+
+@pytest.mark.usefixtures("app_with_int_path_param_route")
+class TestPathIntParameter:
+    def test_correct_param_passes(self, client):
+        id_ = 12
+        expected_response = {"id": id_}
+        response = client.get(f"/path_param/{id_}/")
+        assert response.json == expected_response
+
+    def test_string_parameter(self, client):
+        expected_response = {
+            "validation_error": {
+                "path_params": [
+                    {
+                        "loc": ["obj_id"],
+                        "msg": "value is not a valid integer",
+                        "type": "type_error.integer",
+                    }
+                ]
+            }
+        }
+        response = client.get("/path_param/not_an_int/")
+
+        assert response.json == expected_response
+        assert response.status_code == 400
+
+
+@pytest.mark.usefixtures("app_with_untyped_path_param_route")
+class TestPathUnannotatedParameter:
+    def test_int_str_param_passes(self, client):
+        id_ = 12
+        expected_response = {"id": str(id_)}
+        response = client.get(f"/path_param/{id_}/")
+
+        assert response.json == expected_response
+
+    def test_str_param_passes(self, client):
+        id_ = "twelve"
+        expected_response = {"id": id_}
+        response = client.get(f"/path_param/{id_}/")
+
+        assert response.json == expected_response

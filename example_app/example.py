@@ -1,4 +1,5 @@
 from typing import Optional
+
 from flask import Flask
 from pydantic import BaseModel
 
@@ -37,6 +38,27 @@ class ResponseModel(BaseModel):
     age: int
     name: str
     nickname: Optional[str]
+
+
+@app.route("/character/<character_id>/", methods=["GET"])
+@validate()
+def get_character(character_id: int):
+    characters = [
+        ResponseModel(id=1, age=95, name="Geralt", nickname="White Wolf"),
+        ResponseModel(id=2, age=45, name="Triss Merigold", nickname="sorceress"),
+        ResponseModel(id=3, age=42, name="Julian Alfred Pankratz", nickname="Jaskier"),
+        ResponseModel(id=4, age=101, name="Yennefer", nickname="Yenn"),
+    ]
+    try:
+        return characters[character_id]
+    except IndexError:
+        return {"error": "Not found"}, 400
+
+
+"""
+curl http://127.0.0.1:5000/character/2/ \
+--header 'Content-Type: application/json'
+"""
 
 
 @app.route("/", methods=["POST"])
