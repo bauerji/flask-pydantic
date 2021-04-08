@@ -1,6 +1,6 @@
 # Flask-Pydantic
 
-[![Actions Status](https://github.com/bauerji/flask_pydantic/workflows/Python%20package/badge.svg?branch=master)](https://github.com/bauerji/flask_pydantic/actions)
+[![Actions Status](https://github.com/bauerji/flask_pydantic/workflows/Tests/badge.svg?branch=master)](https://github.com/bauerji/flask_pydantic/actions/tests.yml)
 [![PyPI](https://img.shields.io/pypi/v/Flask-Pydantic?color=g)](https://pypi.org/project/Flask-Pydantic/)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/bauerji/flask_pydantic.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/bauerji/flask_pydantic/context:python)
 [![License](https://img.shields.io/badge/license-MIT-purple)](https://github.com/bauerji/flask_pydantic/blob/master/LICENSE)
