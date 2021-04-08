@@ -300,6 +300,15 @@ class TestValidate:
             "'application/json' is required."
         }
 
+    def test_damaged_request_body_json_with_charset(self, request_ctx, mocker):
+        mock_request = mocker.patch.object(request_ctx, "request")
+        content_type = "application/json;charset=utf-8"
+        mock_request.headers = {"Content-Type": content_type}
+        mock_request.get_json = lambda: None
+        body_model = RequestBodyModel
+        with pytest.raises(JsonBodyParsingError):
+            validate(body_model)(lambda x: x)()
+
     def test_damaged_request_body(self, request_ctx, mocker):
         mock_request = mocker.patch.object(request_ctx, "request")
         content_type = "application/json"
