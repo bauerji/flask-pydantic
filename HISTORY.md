@@ -1,7 +1,11 @@
 # Release history
 
+## 0.7.1 (2021-04-08)
+## Bugfixes
+- recognize mime types with character encoding standard
+
 ## 0.7.0 (2021-04-05)
-## Features
+### Features
 - add support for URL path parameters parsing and validation
 
 ## 0.6.3 (2021-03-26)
