@@ -186,7 +186,8 @@ def validate(
                         b = body_model(**body_params)
                     except TypeError:
                         content_type = request.headers.get("Content-Type", "").lower()
-                        if content_type != "application/json":
+                        media_type = content_type.split(";")[0]
+                        if media_type != "application/json":
                             return unsupported_media_type_response(content_type)
                         else:
                             raise JsonBodyParsingError()
