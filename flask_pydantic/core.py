@@ -234,15 +234,28 @@ def validate(
 
             if (
                 isinstance(res, tuple)
-                and len(res) == 2
+                and len(res) in [2, 3]
                 and isinstance(res[0], BaseModel)
             ):
-                return make_json_response(
+                headers = None
+                status = on_success_status
+                if isinstance(res[1], (dict, tuple, list)):
+                    headers = res[1]
+                elif len(res) == 3 and isinstance(res[2], (dict, tuple, list)):
+                    status = res[1]
+                    headers = res[2]
+                else:
+                    status = res[1]
+
+                ret = make_json_response(
                     res[0],
-                    res[1],
+                    status,
                     exclude_none=exclude_none,
                     by_alias=response_by_alias,
                 )
+                if headers:
+                    ret.headers.update(headers)
+                return ret
 
             return res
 
