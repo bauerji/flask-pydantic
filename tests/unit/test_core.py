@@ -172,8 +172,8 @@ class TestValidate:
         assert response.json == parameters.expected_response_body
         if 200 <= response.status_code < 300:
             assert (
-                    mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
-                    == parameters.request_body
+                mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
+                == parameters.request_body
             )
             assert mock_request.query_params.dict(
                 exclude_none=True, exclude_defaults=True
@@ -199,8 +199,8 @@ class TestValidate:
         assert response.json == parameters.expected_response_body
         if 200 <= response.status_code < 300:
             assert (
-                    mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
-                    == parameters.request_body
+                mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
+                == parameters.request_body
             )
             assert mock_request.query_params.dict(
                 exclude_none=True, exclude_defaults=True
@@ -297,7 +297,7 @@ class TestValidate:
         assert response.status_code == 415
         assert response.json == {
             "detail": f"Unsupported media type '{content_type}' in request. "
-                      "'application/json' is required."
+            "'application/json' is required."
         }
 
     def test_damaged_request_body_json_with_charset(self, request_ctx, mocker):
@@ -319,7 +319,9 @@ class TestValidate:
             validate(body_model)(lambda x: x)()
 
     @pytest.mark.parametrize("parameters", validate_test_cases)
-    def test_validate_func_having_return_type_annotation(self, mocker, request_ctx, parameters: ValidateParams):
+    def test_validate_func_having_return_type_annotation(
+        self, mocker, request_ctx, parameters: ValidateParams
+    ):
         mock_request = mocker.patch.object(request_ctx, "request")
         mock_request.args = parameters.request_query
         mock_request.get_json = lambda: parameters.request_body
@@ -342,8 +344,8 @@ class TestValidate:
         assert response.json == parameters.expected_response_body
         if 200 <= response.status_code < 300:
             assert (
-                    mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
-                    == parameters.request_body
+                mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
+                == parameters.request_body
             )
             assert mock_request.query_params.dict(
                 exclude_none=True, exclude_defaults=True
