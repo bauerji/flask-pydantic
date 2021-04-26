@@ -1,5 +1,9 @@
 # Release history
 
+## 0.7.2 (2021-04-26)
+## Bugfixes
+- ignore return-type annotations
+
 ## 0.7.1 (2021-04-08)
 ## Bugfixes
 - recognize mime types with character encoding standard
