@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional, Type, Union, List
+from typing import Any, List, NamedTuple, Optional, Type, Union
 
 import pytest
 from flask import jsonify
@@ -6,11 +6,11 @@ from pydantic import BaseModel
 from werkzeug.datastructures import ImmutableMultiDict
 
 from flask_pydantic import validate
+from flask_pydantic.core import convert_query_params, is_iterable_of_models
 from flask_pydantic.exceptions import (
     InvalidIterableOfModelsException,
     JsonBodyParsingError,
 )
-from flask_pydantic.core import is_iterable_of_models, convert_query_params
 
 
 class ValidateParams(NamedTuple):
@@ -172,8 +172,8 @@ class TestValidate:
         assert response.json == parameters.expected_response_body
         if 200 <= response.status_code < 300:
             assert (
-                mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
-                == parameters.request_body
+                    mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
+                    == parameters.request_body
             )
             assert mock_request.query_params.dict(
                 exclude_none=True, exclude_defaults=True
@@ -199,8 +199,8 @@ class TestValidate:
         assert response.json == parameters.expected_response_body
         if 200 <= response.status_code < 300:
             assert (
-                mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
-                == parameters.request_body
+                    mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
+                    == parameters.request_body
             )
             assert mock_request.query_params.dict(
                 exclude_none=True, exclude_defaults=True
@@ -297,7 +297,7 @@ class TestValidate:
         assert response.status_code == 415
         assert response.json == {
             "detail": f"Unsupported media type '{content_type}' in request. "
-            "'application/json' is required."
+                      "'application/json' is required."
         }
 
     def test_damaged_request_body_json_with_charset(self, request_ctx, mocker):
@@ -317,6 +317,37 @@ class TestValidate:
         body_model = RequestBodyModel
         with pytest.raises(JsonBodyParsingError):
             validate(body_model)(lambda x: x)()
+
+    @pytest.mark.parametrize("parameters", validate_test_cases)
+    def test_validate_func_having_return_type_annotation(self, mocker, request_ctx, parameters: ValidateParams):
+        mock_request = mocker.patch.object(request_ctx, "request")
+        mock_request.args = parameters.request_query
+        mock_request.get_json = lambda: parameters.request_body
+
+        def f() -> Any:
+            return parameters.response_model(
+                **mock_request.body_params.dict(), **mock_request.query_params.dict()
+            )
+
+        response = validate(
+            query=parameters.query_model,
+            body=parameters.body_model,
+            on_success_status=parameters.on_success_status,
+            exclude_none=parameters.exclude_none,
+            response_many=parameters.response_many,
+            request_body_many=parameters.request_body_many,
+        )(f)()
+
+        assert response.status_code == parameters.expected_status_code
+        assert response.json == parameters.expected_response_body
+        if 200 <= response.status_code < 300:
+            assert (
+                    mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
+                    == parameters.request_body
+            )
+            assert mock_request.query_params.dict(
+                exclude_none=True, exclude_defaults=True
+            ) == parameters.request_query.to_dict(flat=True)
 
 
 class TestIsIterableOfModels:

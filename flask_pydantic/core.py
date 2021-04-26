@@ -79,7 +79,7 @@ def validate_path_params(func: Callable, kwargs: dict) -> Tuple[dict, list]:
     errors = []
     validated = {}
     for name, type_ in func.__annotations__.items():
-        if name in {"query", "body"}:
+        if name in {"query", "body", "return"}:
             continue
         try:
             value = parse_obj_as(type_, kwargs.get(name))
