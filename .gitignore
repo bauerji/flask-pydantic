@@ -133,3 +133,4 @@ dmypy.json
 
 docker-compose.yaml
 .dockerignore
+.idea/
