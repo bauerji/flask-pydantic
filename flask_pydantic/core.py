@@ -175,7 +175,10 @@ def validate(
             if body_model:
                 body_params = request.get_json()
                 if "__root__" in body_model.__fields__:
-                    b = body_model(__root__=body_params).__root__
+                    try:
+                        b = body_model(__root__=body_params).__root__
+                    except ValidationError as ve:
+                        err["body_params"] = ve.errors()
                 elif request_body_many:
                     try:
                         b = validate_many_models(body_model, body_params)

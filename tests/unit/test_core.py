@@ -44,6 +44,10 @@ class RequestBodyModel(BaseModel):
     b2: Optional[str] = None
 
 
+class RequestBodyModelRoot(BaseModel):
+    __root__: Union[str, RequestBodyModel]
+
+
 validate_test_cases = [
     pytest.param(
         ValidateParams(
@@ -298,6 +302,26 @@ class TestValidate:
         assert response.json == {
             "detail": f"Unsupported media type '{content_type}' in request. "
             "'application/json' is required."
+        }
+
+    def test_invalid_body_model_root(self, request_ctx, mocker):
+        mock_request = mocker.patch.object(request_ctx, "request")
+        content_type = "application/json"
+        mock_request.headers = {"Content-Type": content_type}
+        mock_request.get_json = lambda: None
+        body_model = RequestBodyModelRoot
+        response = validate(body_model)(lambda x: x)()
+        assert response.status_code == 400
+        assert response.json == {
+            "validation_error": {
+                "body_params": [
+                    {
+                        "loc": ["__root__"],
+                        "msg": "none is not an allowed value",
+                        "type": "type_error.none.not_allowed",
+                    }
+                ]
+            }
         }
 
     def test_damaged_request_body_json_with_charset(self, request_ctx, mocker):
