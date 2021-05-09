@@ -1,5 +1,9 @@
 # Release history
 
+## 0.8.0 (2021-05-09)
+## Features
+- Return `400` response when model's  `__root__` validation fails
+
 ## 0.7.2 (2021-04-26)
 ## Bugfixes
 - ignore return-type annotations
