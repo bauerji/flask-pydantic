@@ -3,7 +3,7 @@ from typing import Optional
 from flask import Flask
 from pydantic import BaseModel
 
-from flask_pydantic import validate
+from flask_pydantic import validate, add_openapi_spec, openapi_docs
 
 app = Flask("flask_pydantic_app")
 
@@ -62,6 +62,7 @@ curl http://127.0.0.1:5000/character/2/ \
 
 
 @app.route("/", methods=["POST"])
+@openapi_docs()
 @validate()
 def post(body: RequestBodyModel):
     name = body.name
@@ -107,4 +108,5 @@ curl --location --request POST 'http://127.0.0.1:5000/both?age=40' \
 
 
 if __name__ == "__main__":
+    add_openapi_spec(app)
     app.run()
