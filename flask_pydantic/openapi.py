@@ -90,6 +90,7 @@ class OpenAPI:
 
         self.app = app
         self.endpoint: str = OPENAPI_ENDPOINT
+        self.url_prefix: str = OPENAPI_URL_PREFIX
         self.mode: str = OPENAPI_MODE
         self.openapi_version: str = OPENAPI_VERSION
         self.info: dict = OPENAPI_INFO
@@ -103,7 +104,7 @@ class OpenAPI:
             self._spec = self.generate_spec()
         return self._spec
 
-    def _bypass(self, func):
+    def _bypass(self, func) -> bool:
         if self.mode == "greedy":
             return False
         elif self.mode == "strict":
@@ -125,7 +126,9 @@ class OpenAPI:
         tags = {}
 
         for rule in self.app.url_map.iter_rules():
-            if str(rule).startswith(self.endpoint) or str(rule).startswith("/static"):
+            if str(rule).startswith(
+                (f"{self.url_prefix or ''}{self.endpoint}", "/static")
+            ):
                 continue
 
             func = self.app.view_functions[rule.endpoint]
@@ -228,8 +231,9 @@ class OpenAPI:
                 "schemas": {name: schema for name, schema in self._models.items()},
             },
             "definitions": definitions,
-            **self.extra_props,
         }
+
+        merge_dicts(data, self.extra_props)
 
         return data
 
@@ -322,3 +326,17 @@ def parse_url(path: str):
         )
 
     return "".join(subs), parameters
+
+def merge_dicts(d1, d2):
+    for k, v in d1.items():
+        if k in d2:
+            v2 = d2.pop(k)
+            if isinstance(v, dict):
+                if isinstance(v2, dict):
+                    merge_dicts(v, v2)
+                else:
+                    d1[k] = v2
+            else:
+                d1[k] = v2
+    d1.update(d2)
+    return d1
