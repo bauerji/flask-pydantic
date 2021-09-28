@@ -28,13 +28,23 @@ def add_openapi_spec(
     openapi_filename: str = OPENAPI_FILENAME,
     mode: str = OPENAPI_MODE,
     ui: str = OPENAPI_UI,
+    openapi_version: str = OPENAPI_VERSION,
+    openapi_info: dict = OPENAPI_INFO,
     extra_props: dict = {},
 ):
     assert isinstance(app, Flask)
     assert mode in {"normal", "greedy", "strict"}
 
     if not hasattr(add_openapi_spec, "openapi"):
-        add_openapi_spec.openapi = OpenAPI(app)
+        add_openapi_spec.openapi = OpenAPI(
+            app,
+            endpoint=endpoint,
+            url_prefix=url_prefix,
+            mode=mode,
+            openapi_version=openapi_version,
+            openapi_info=openapi_info,
+            extra_props=extra_props,
+        )
     openapi = add_openapi_spec.openapi
     openapi.extra_props = extra_props
 
@@ -85,16 +95,25 @@ class APIError:
 class OpenAPI:
     _models = {}
 
-    def __init__(self, app: Flask) -> None:
+    def __init__(
+        self,
+        app: Flask,
+        endpoint: str = OPENAPI_ENDPOINT,
+        url_prefix: Optional[str] = OPENAPI_URL_PREFIX,
+        mode: str = OPENAPI_MODE,
+        openapi_version: str = OPENAPI_VERSION,
+        openapi_info: dict = OPENAPI_INFO,
+        extra_props: dict = {},
+    ) -> None:
         assert isinstance(app, Flask)
 
         self.app = app
-        self.endpoint: str = OPENAPI_ENDPOINT
-        self.url_prefix: str = OPENAPI_URL_PREFIX
-        self.mode: str = OPENAPI_MODE
-        self.openapi_version: str = OPENAPI_VERSION
-        self.info: dict = OPENAPI_INFO
-        self.extra_props: dict = {}
+        self.endpoint: str = endpoint
+        self.url_prefix: Optional[str] = url_prefix
+        self.mode: str = mode
+        self.openapi_version: str = openapi_version
+        self.info: dict = openapi_info
+        self.extra_props: dict = extra_props
 
         self._spec = None
 
@@ -329,6 +348,16 @@ def parse_url(path: str):
 
 
 def merge_dicts(d1, d2):
+    """
+    Merge dictionary `d2` into `d1` and return the `d1`.
+
+    If `d2` has nested dictionaries which also exists in `d1`, the nested dictionaries
+    will be merged recursively instead of replacing them.
+
+    For example:
+    merge_dicts({"c": {"a":1}}, {"c":{"b":2}}) => {"c":{"a": 1, "b": 2}}
+
+    """
     for k, v in d1.items():
         if k in d2:
             v2 = d2.pop(k)
