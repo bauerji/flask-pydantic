@@ -327,6 +327,7 @@ def parse_url(path: str):
 
     return "".join(subs), parameters
 
+
 def merge_dicts(d1, d2):
     for k, v in d1.items():
         if k in d2:
