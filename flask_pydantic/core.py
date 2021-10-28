@@ -84,6 +84,13 @@ def validate_path_params(func: Callable, kwargs: dict) -> Tuple[dict, list]:
     return kwargs, errors
 
 
+def get_body_dict(**params):
+    data = request.get_json(**params)
+    if data is None and params.get("silent"):
+        return {}
+    return data
+
+
 def validate(
     body: Optional[Type[BaseModel]] = None,
     query: Optional[Type[BaseModel]] = None,
@@ -92,6 +99,7 @@ def validate(
     response_many: bool = False,
     request_body_many: bool = False,
     response_by_alias: bool = False,
+    get_json_params: Optional[dict] = None,
 ):
     """
     Decorator for route methods which will validate query and body parameters
@@ -165,7 +173,7 @@ def validate(
             body_in_kwargs = func.__annotations__.get("body")
             body_model = body_in_kwargs or body
             if body_model:
-                body_params = request.get_json()
+                body_params = get_body_dict(**(get_json_params or {}))
                 if "__root__" in body_model.__fields__:
                     try:
                         b = body_model(__root__=body_params).__root__
