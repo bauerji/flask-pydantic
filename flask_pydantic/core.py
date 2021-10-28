@@ -50,14 +50,6 @@ def is_iterable_of_models(content: Any) -> bool:
         return False
 
 
-def parse_custom_root_type(model: Type[BaseModel], obj):
-    return model.parse_obj(obj).__root__
-
-
-def has_custom_root_type(model: Type[BaseModel], obj):
-    return isinstance(obj, list) and "__root__" in model.__fields__
-
-
 def validate_many_models(model: Type[BaseModel], content: Any) -> List[BaseModel]:
     try:
         return [model(**fields) for fields in content]
