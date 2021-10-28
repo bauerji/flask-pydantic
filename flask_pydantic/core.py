@@ -118,6 +118,8 @@ def validate(
         models.
     `request_body_many` whether response body contains array of given model
         (request.body_params then contains list of models i. e. List[BaseModel])
+    `response_by_alias` whether Pydantic's alias is used
+    `get_json_params` - parameters to be passed to Request.get_json() function
 
     example::
 
