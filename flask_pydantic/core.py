@@ -50,14 +50,6 @@ def is_iterable_of_models(content: Any) -> bool:
         return False
 
 
-def parse_custom_root_type(model: Type[BaseModel], obj):
-    return model.parse_obj(obj).__root__
-
-
-def has_custom_root_type(model: Type[BaseModel], obj):
-    return isinstance(obj, list) and "__root__" in model.__fields__
-
-
 def validate_many_models(model: Type[BaseModel], content: Any) -> List[BaseModel]:
     try:
         return [model(**fields) for fields in content]
@@ -92,6 +84,13 @@ def validate_path_params(func: Callable, kwargs: dict) -> Tuple[dict, list]:
     return kwargs, errors
 
 
+def get_body_dict(**params):
+    data = request.get_json(**params)
+    if data is None and params.get("silent"):
+        return {}
+    return data
+
+
 def validate(
     body: Optional[Type[BaseModel]] = None,
     query: Optional[Type[BaseModel]] = None,
@@ -100,6 +99,7 @@ def validate(
     response_many: bool = False,
     request_body_many: bool = False,
     response_by_alias: bool = False,
+    get_json_params: Optional[dict] = None,
 ):
     """
     Decorator for route methods which will validate query and body parameters
@@ -118,6 +118,8 @@ def validate(
         models.
     `request_body_many` whether response body contains array of given model
         (request.body_params then contains list of models i. e. List[BaseModel])
+    `response_by_alias` whether Pydantic's alias is used
+    `get_json_params` - parameters to be passed to Request.get_json() function
 
     example::
 
@@ -173,7 +175,7 @@ def validate(
             body_in_kwargs = func.__annotations__.get("body")
             body_model = body_in_kwargs or body
             if body_model:
-                body_params = request.get_json()
+                body_params = get_body_dict(**(get_json_params or {}))
                 if "__root__" in body_model.__fields__:
                     try:
                         b = body_model(__root__=body_params).__root__

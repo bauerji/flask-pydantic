@@ -23,6 +23,22 @@ def app_with_array_route(app):
 
 
 @pytest.fixture
+def app_with_optional_body(app):
+    class Body(BaseModel):
+        param: str
+
+    @app.route("/no_params", methods=["POST"])
+    @validate()
+    def no_params(body: Body):
+        return body
+
+    @app.route("/silent", methods=["POST"])
+    @validate(get_json_params={"silent": True})
+    def silent(body: Body):
+        return body
+
+
+@pytest.fixture
 def app_with_int_path_param_route(app):
     class IdObj(BaseModel):
         id: int
@@ -258,3 +274,35 @@ class TestPathUnannotatedParameter:
         response = client.get(f"/path_param/{id_}/")
 
         assert response.json == expected_response
+
+
+@pytest.mark.new
+@pytest.mark.usefixtures("app_with_optional_body")
+class TestGetJsonParams:
+    def test_empty_body_fails(self, client):
+        response = client.post(
+            "/no_params", headers={"Content-Type": "application/json"}
+        )
+
+        assert response.status_code == 400
+        assert response.data == (
+            b'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
+            b"\n<title>400 Bad Request</title>\n<h1>Bad Request</h1>"
+            b"\n<p>Failed to decode JSON object: Expecting value: line 1 column 1 (char 0)</p>\n"
+        )
+
+    def test_silent(self, client):
+        response = client.post("/silent", headers={"Content-Type": "application/json"})
+
+        assert response.json == {
+            "validation_error": {
+                "body_params": [
+                    {
+                        "loc": ["param"],
+                        "msg": "field required",
+                        "type": "value_error.missing",
+                    }
+                ]
+            }
+        }
+        assert response.status_code == 400
