@@ -15,14 +15,15 @@ Flask extension for integration of the awesome [pydantic package](https://github
 ## Basics
 ### URL query and body parameters
 
-`validate` decorator validates query and body request parameters and makes them accessible two ways:
+`validate` decorator validates query, body and form-data request parameters and makes them accessible two ways:
 
 1. [Using `validate` arguments, via flask's `request` variable](#basic-example)
 
 | **parameter type** | **`request` attribute name** |
-| :----------------: | :--------------------------: |
+|:------------------:|:----------------------------:|
 |       query        |        `query_params`        |
 |        body        |        `body_params`         |
+|        form        |        `form_params`         |
 
 2. [Using the decorated function argument parameters type hints](#using-the-decorated-function-kwargs)
 
@@ -192,7 +193,27 @@ def get_and_post(body: RequestBodyModel,query: QueryModel):
 </a>
 
 
+### Example 5: Request form-data only
 
+```python
+class RequestFormDataModel(BaseModel):
+  name: str
+  nickname: Optional[str]
+
+# Example2: request body only
+@app.route("/", methods=["POST"])
+@validate()
+def post(form: RequestFormDataModel): 
+  name = form.name
+  nickname = form.nickname
+  return ResponseModel(
+    name=name, nickname=nickname,id=0, age=1000
+    )
+```
+
+<a href="blob/master/example_app/example.py">
+  See the full example app here
+</a>
 
 ### Modify response status code
 
