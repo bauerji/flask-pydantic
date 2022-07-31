@@ -3,6 +3,7 @@
 ## 0.10.0 (2022-07-31)
 ### Features
 - Add validation for form data
+- Handle extra headers returned by route functions
 
 ### Internal
 - Cleanup pipelines, drop python 3.6 tests, test on MacOS images
