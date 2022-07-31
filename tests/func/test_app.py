@@ -328,7 +328,6 @@ class TestPathUnannotatedParameter:
         assert response.json == expected_response
 
 
-@pytest.mark.new
 @pytest.mark.usefixtures("app_with_optional_body")
 class TestGetJsonParams:
     def test_empty_body_fails(self, client):
