@@ -71,7 +71,7 @@ def validate_path_params(func: Callable, kwargs: dict) -> Tuple[dict, list]:
     errors = []
     validated = {}
     for name, type_ in func.__annotations__.items():
-        if name in {"query", "body", "return"}:
+        if name in {"query", "body", "form", "return"}:
             continue
         try:
             value = parse_obj_as(type_, kwargs.get(name))
@@ -100,15 +100,17 @@ def validate(
     request_body_many: bool = False,
     response_by_alias: bool = False,
     get_json_params: Optional[dict] = None,
+    form: Optional[Type[BaseModel]] = None,
 ):
     """
-    Decorator for route methods which will validate query and body parameters
+    Decorator for route methods which will validate query, body and form parameters
     as well as serialize the response (if it derives from pydantic's BaseModel
     class).
 
     Request parameters are accessible via flask's `request` variable:
         - request.query_params
         - request.body_params
+        - request.form_params
 
     Or directly as `kwargs`, if you define them in the decorated function.
 
@@ -133,6 +135,9 @@ def validate(
         class Body(BaseModel):
             color: str
 
+        class Form(BaseModel):
+            name: str
+
         class MyModel(BaseModel):
             id: int
             color: str
@@ -141,7 +146,7 @@ def validate(
         ...
 
         @app.route("/")
-        @validate(query=Query, body=Body)
+        @validate(query=Query, body=Body, form=Form)
         def test_route():
             query = request.query_params.query
             color = request.body_params.query
@@ -150,7 +155,7 @@ def validate(
 
         @app.route("/kwargs")
         @validate()
-        def test_route_kwargs(query:Query, body:Body):
+        def test_route_kwargs(query:Query, body:Body, form:Form):
 
             return MyModel(...)
 
@@ -160,7 +165,7 @@ def validate(
     def decorate(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
-            q, b, err = None, None, {}
+            q, b, f, err = None, None, None, {}
             kwargs, path_err = validate_path_params(func, kwargs)
             if path_err:
                 err["path_params"] = path_err
@@ -198,12 +203,36 @@ def validate(
                             raise JsonBodyParsingError()
                     except ValidationError as ve:
                         err["body_params"] = ve.errors()
+            form_in_kwargs = func.__annotations__.get("form")
+            form_model = form_in_kwargs or form
+            if form_model:
+                form_params = request.form
+                if "__root__" in form_model.__fields__:
+                    try:
+                        f = form_model(__root__=form_params).__root__
+                    except ValidationError as ve:
+                        err["form_params"] = ve.errors()
+                else:
+                    try:
+                        f = form_model(**form_params)
+                    except TypeError:
+                        content_type = request.headers.get("Content-Type", "").lower()
+                        media_type = content_type.split(";")[0]
+                        if media_type != "multipart/form-data":
+                            return unsupported_media_type_response(content_type)
+                        else:
+                            raise JsonBodyParsingError
+                    except ValidationError as ve:
+                        err["form_params"] = ve.errors()
             request.query_params = q
             request.body_params = b
+            request.form_params = f
             if query_in_kwargs:
                 kwargs["query"] = q
             if body_in_kwargs:
                 kwargs["body"] = b
+            if form_in_kwargs:
+                kwargs["form"] = f
 
             if err:
                 status_code = current_app.config.get(

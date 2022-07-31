@@ -1,4 +1,4 @@
-from typing import Type, Optional, List
+from typing import List, Optional, Type
 
 import pytest
 from flask import Flask, request
@@ -32,6 +32,15 @@ def body_model() -> Type[BaseModel]:
         exclude: Optional[str]
 
     return Body
+
+
+@pytest.fixture
+def form_model() -> Type[BaseModel]:
+    class Form(BaseModel):
+        search_term: str
+        exclude: Optional[str]
+
+    return Form
 
 
 @pytest.fixture
@@ -70,7 +79,7 @@ def pass_search(
 
 
 @pytest.fixture
-def app(posts, response_model, query_model, body_model, post_model):
+def app(posts, response_model, query_model, body_model, post_model, form_model):
     app = Flask("test_app")
     app.config["DEBUG"] = True
     app.config["TESTING"] = True
@@ -94,6 +103,16 @@ def app(posts, response_model, query_model, body_model, post_model):
             post_model(**p)
             for p in posts
             if pass_search(p, body.search_term, body.exclude, query.min_views)
+        ]
+        return response_model(results=results[: query.limit], count=len(results))
+
+    @app.route("/search/form/kwargs", methods=["POST"])
+    @validate()
+    def post_kwargs_form(query: query_model, form: form_model):
+        results = [
+            post_model(**p)
+            for p in posts
+            if pass_search(p, form.search_term, form.exclude, query.min_views)
         ]
         return response_model(results=results[: query.limit], count=len(results))
 

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify, request
 from flask_pydantic import validate
 from pydantic import BaseModel
 
@@ -25,6 +25,11 @@ class IndexParam(BaseModel):
 
 
 class BodyModel(BaseModel):
+    name: str
+    nickname: Optional[str]
+
+
+class FormModel(BaseModel):
     name: str
     nickname: Optional[str]
 
@@ -53,6 +58,23 @@ def post():
     )
 
 
+@app.route("/form", methods=["POST"])
+@validate(form=FormModel, query=QueryModel)
+def post():
+    """
+    Basic example with both query and form-data parameters, response object serialization.
+    """
+    # save model to DB
+    id_ = 2
+
+    return ResponseModel(
+        id=id_,
+        age=request.query_params.age,
+        name=request.form_params.name,
+        nickname=request.form_params.nickname,
+    )
+
+
 @app.route("/kwargs", methods=["POST"])
 @validate()
 def post_kwargs(body: BodyModel, query: QueryModel):
@@ -64,6 +86,19 @@ def post_kwargs(body: BodyModel, query: QueryModel):
     id_ = 3
 
     return ResponseModel(id=id_, age=query.age, name=body.name, nickname=body.nickname)
+
+
+@app.route("/form/kwargs", methods=["POST"])
+@validate()
+def post_kwargs(form: FormModel, query: QueryModel):
+    """
+    Basic example with both query and form-data parameters, response object serialization.
+    This time using the decorated function kwargs `form` and `query` type hinting
+    """
+    # save model to DB
+    id_ = 3
+
+    return ResponseModel(id=id_, age=query.age, name=form.name, nickname=form.nickname)
 
 
 @app.route("/many", methods=["GET"])

@@ -1,9 +1,8 @@
 from typing import Optional
 
 from flask import Flask
-from pydantic import BaseModel
-
 from flask_pydantic import validate
+from pydantic import BaseModel
 
 app = Flask("flask_pydantic_app")
 
@@ -15,6 +14,11 @@ class RequestBodyModel(BaseModel):
 
 class QueryModel(BaseModel):
     age: int
+
+
+class FormModel(BaseModel):
+    name: str
+    nickname: Optional[str]
 
 
 @app.route("/", methods=["GET"])
@@ -83,6 +87,25 @@ curl --location --request POST 'http://127.0.0.1:5000/' \
 curl --location --request POST 'http://127.0.0.1:5000/' \
 --header 'Content-Type: application/json' \
 --data-raw '{"name":123}'
+"""
+
+
+@app.route("/form", methods=["POST"])
+@validate()
+def post(form: FormModel):
+    name = form.name
+    nickname = form.nickname
+    return ResponseModel(name=name, nickname=nickname, id=0, age=1000)
+
+
+"""
+curl --location --request POST 'http://127.0.0.1:5000/form'
+
+curl --location --request POST 'http://127.0.0.1:5000/form' \
+-F  name=123\
+
+curl --location --request POST 'http://127.0.0.1:5000/form' \
+-F  name=some-name
 """
 
 

@@ -2,9 +2,8 @@ from typing import List, Optional
 
 import pytest
 from flask import request
-from pydantic import BaseModel
-
 from flask_pydantic import validate
+from pydantic import BaseModel
 
 
 class ArrayModel(BaseModel):
@@ -175,6 +174,46 @@ test_cases = [
     ),
 ]
 
+form_test_cases = [
+    pytest.param(
+        "?limit=2",
+        {},
+        400,
+        {
+            "validation_error": {
+                "form_params": [
+                    {
+                        "loc": ["search_term"],
+                        "msg": "field required",
+                        "type": "value_error.missing",
+                    }
+                ]
+            }
+        },
+        id="missing required form parameter",
+    ),
+    pytest.param(
+        "?limit=1&min_views=2",
+        {"search_term": "text"},
+        200,
+        {"count": 2, "results": [{"title": "2", "text": "another text", "views": 2}]},
+        id="valid parameters",
+    ),
+    pytest.param(
+        "",
+        {"search_term": "text"},
+        200,
+        {
+            "count": 3,
+            "results": [
+                {"title": "title 1", "text": "random text", "views": 1},
+                {"title": "2", "text": "another text", "views": 2},
+            ],
+        },
+        id="valid params, no query",
+    ),
+]
+
 
 class TestSimple:
     @pytest.mark.parametrize("query,body,expected_status,expected_response", test_cases)
@@ -186,6 +225,19 @@ class TestSimple:
     @pytest.mark.parametrize("query,body,expected_status,expected_response", test_cases)
     def test_post_kwargs(self, client, query, body, expected_status, expected_response):
         response = client.post(f"/search/kwargs{query}", json=body)
+        assert response.json == expected_response
+        assert response.status_code == expected_status
+
+    @pytest.mark.parametrize(
+        "query,form,expected_status,expected_response", form_test_cases
+    )
+    def test_post_kwargs_form(
+        self, client, query, form, expected_status, expected_response
+    ):
+        response = client.post(
+            f"/search/form/kwargs{query}",
+            data=form,
+        )
         assert response.json == expected_response
         assert response.status_code == expected_status
 
@@ -308,7 +360,6 @@ class TestPathUnannotatedParameter:
         assert response.json == expected_response
 
 
-@pytest.mark.new
 @pytest.mark.usefixtures("app_with_optional_body")
 class TestGetJsonParams:
     def test_empty_body_fails(self, client):
@@ -317,10 +368,9 @@ class TestGetJsonParams:
         )
 
         assert response.status_code == 400
-        assert response.data == (
-            b'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">'
-            b"\n<title>400 Bad Request</title>\n<h1>Bad Request</h1>"
-            b"\n<p>Failed to decode JSON object: Expecting value: line 1 column 1 (char 0)</p>\n"
+        assert (
+            "failed to decode json object: expecting value: line 1 column 1 (char 0)"
+            in response.text.lower()
         )
 
     def test_silent(self, client):
