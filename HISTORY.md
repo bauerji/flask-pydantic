@@ -1,5 +1,12 @@
 # Release history
 
+## 0.10.0 (2022-07-31)
+### Features
+- Add validation for form data
+
+### Internal
+- Cleanup pipelines, drop python 3.6 tests, test on MacOS images
+
 ## 0.9.0 (2021-10-28)
 ### Features
 - Support for passing parameters to [`flask.Request.get_json`](https://tedboy.github.io/flask/generated/generated/flask.Request.get_json.html) function via `validate`'s `get_json_params` parameter 
