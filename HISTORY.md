@@ -1,15 +1,22 @@
 # Release history
 
+## 0.9.0 (2021-10-28)
+### Features
+- Support for passing parameters to [`flask.Request.get_json`](https://tedboy.github.io/flask/generated/generated/flask.Request.get_json.html) function via `validate`'s `get_json_params` parameter 
+
+### Internal
+- Add tests for Python 3.10 to pipeline
+
 ## 0.8.0 (2021-05-09)
-## Features
+### Features
 - Return `400` response when model's  `__root__` validation fails
 
 ## 0.7.2 (2021-04-26)
-## Bugfixes
+### Bugfixes
 - ignore return-type annotations
 
 ## 0.7.1 (2021-04-08)
-## Bugfixes
+### Bugfixes
 - recognize mime types with character encoding standard
 
 ## 0.7.0 (2021-04-05)

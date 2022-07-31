@@ -53,14 +53,6 @@ def is_iterable_of_models(content: Any) -> bool:
         return False
 
 
-def parse_custom_root_type(model: Type[BaseModel], obj):
-    return model.parse_obj(obj).__root__
-
-
-def has_custom_root_type(model: Type[BaseModel], obj):
-    return isinstance(obj, list) and "__root__" in model.__fields__
-
-
 def validate_many_models(model: Type[BaseModel], content: Any) -> List[BaseModel]:
     try:
         return [model(**fields) for fields in content]
@@ -82,7 +74,7 @@ def validate_path_params(func: Callable, kwargs: dict) -> Tuple[dict, list]:
     errors = []
     validated = {}
     for name, type_ in func.__annotations__.items():
-        if name in {"query", "body", "return"}:
+        if name in {"query", "body", "form", "return"}:
             continue
         try:
             value = parse_obj_as(type_, kwargs.get(name))
@@ -95,6 +87,13 @@ def validate_path_params(func: Callable, kwargs: dict) -> Tuple[dict, list]:
     return kwargs, errors
 
 
+def get_body_dict(**params):
+    data = request.get_json(**params)
+    if data is None and params.get("silent"):
+        return {}
+    return data
+
+
 def validate(
     body: Optional[Type[BaseModel]] = None,
     query: Optional[Type[BaseModel]] = None,
@@ -103,15 +102,18 @@ def validate(
     response_many: bool = False,
     request_body_many: bool = False,
     response_by_alias: bool = False,
+    get_json_params: Optional[dict] = None,
+    form: Optional[Type[BaseModel]] = None,
 ):
     """
-    Decorator for route methods which will validate query and body parameters
+    Decorator for route methods which will validate query, body and form parameters
     as well as serialize the response (if it derives from pydantic's BaseModel
     class).
 
     Request parameters are accessible via flask's `request` variable:
         - request.query_params
         - request.body_params
+        - request.form_params
 
     Or directly as `kwargs`, if you define them in the decorated function.
 
@@ -121,6 +123,8 @@ def validate(
         models.
     `request_body_many` whether response body contains array of given model
         (request.body_params then contains list of models i. e. List[BaseModel])
+    `response_by_alias` whether Pydantic's alias is used
+    `get_json_params` - parameters to be passed to Request.get_json() function
 
     example::
 
@@ -134,6 +138,9 @@ def validate(
         class Body(BaseModel):
             color: str
 
+        class Form(BaseModel):
+            name: str
+
         class MyModel(BaseModel):
             id: int
             color: str
@@ -142,7 +149,7 @@ def validate(
         ...
 
         @app.route("/")
-        @validate(query=Query, body=Body)
+        @validate(query=Query, body=Body, form=Form)
         def test_route():
             query = request.query_params.query
             color = request.body_params.query
@@ -151,7 +158,7 @@ def validate(
 
         @app.route("/kwargs")
         @validate()
-        def test_route_kwargs(query:Query, body:Body):
+        def test_route_kwargs(query:Query, body:Body, form:Form):
 
             return MyModel(...)
 
@@ -161,7 +168,7 @@ def validate(
     def decorate(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
-            q, b, err = None, None, {}
+            q, b, f, err = None, None, None, {}
             kwargs, path_err = validate_path_params(func, kwargs)
             if path_err:
                 err["path_params"] = path_err
@@ -176,7 +183,7 @@ def validate(
             body_in_kwargs = func.__annotations__.get("body")
             body_model = body_in_kwargs or body
             if body_model:
-                body_params = request.get_json()
+                body_params = get_body_dict(**(get_json_params or {}))
                 if "__root__" in body_model.__fields__:
                     try:
                         b = body_model(__root__=body_params).__root__
@@ -199,12 +206,36 @@ def validate(
                             raise JsonBodyParsingError()
                     except ValidationError as ve:
                         err["body_params"] = ve.errors()
+            form_in_kwargs = func.__annotations__.get("form")
+            form_model = form_in_kwargs or form
+            if form_model:
+                form_params = request.form
+                if "__root__" in form_model.__fields__:
+                    try:
+                        f = form_model(__root__=form_params).__root__
+                    except ValidationError as ve:
+                        err["form_params"] = ve.errors()
+                else:
+                    try:
+                        f = form_model(**form_params)
+                    except TypeError:
+                        content_type = request.headers.get("Content-Type", "").lower()
+                        media_type = content_type.split(";")[0]
+                        if media_type != "multipart/form-data":
+                            return unsupported_media_type_response(content_type)
+                        else:
+                            raise JsonBodyParsingError
+                    except ValidationError as ve:
+                        err["form_params"] = ve.errors()
             request.query_params = q
             request.body_params = b
+            request.form_params = f
             if query_in_kwargs:
                 kwargs["query"] = q
             if body_in_kwargs:
                 kwargs["body"] = b
+            if form_in_kwargs:
+                kwargs["form"] = f
 
             if err:
                 status_code = current_app.config.get(
@@ -235,15 +266,28 @@ def validate(
 
             if (
                 isinstance(res, tuple)
-                and len(res) == 2
+                and len(res) in [2, 3]
                 and isinstance(res[0], BaseModel)
             ):
-                return make_json_response(
+                headers = None
+                status = on_success_status
+                if isinstance(res[1], (dict, tuple, list)):
+                    headers = res[1]
+                elif len(res) == 3 and isinstance(res[2], (dict, tuple, list)):
+                    status = res[1]
+                    headers = res[2]
+                else:
+                    status = res[1]
+
+                ret = make_json_response(
                     res[0],
-                    res[1],
+                    status,
                     exclude_none=exclude_none,
                     by_alias=response_by_alias,
                 )
+                if headers:
+                    ret.headers.update(headers)
+                return ret
 
             return res
 

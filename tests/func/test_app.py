@@ -2,9 +2,8 @@ from typing import List, Optional
 
 import pytest
 from flask import request
-from pydantic import BaseModel
-
 from flask_pydantic import validate
+from pydantic import BaseModel
 
 
 class ArrayModel(BaseModel):
@@ -20,6 +19,22 @@ def app_with_array_route(app):
         return ArrayModel(
             arr1=request.query_params.arr1, arr2=request.query_params.arr2
         )
+
+
+@pytest.fixture
+def app_with_optional_body(app):
+    class Body(BaseModel):
+        param: str
+
+    @app.route("/no_params", methods=["POST"])
+    @validate()
+    def no_params(body: Body):
+        return body
+
+    @app.route("/silent", methods=["POST"])
+    @validate(get_json_params={"silent": True})
+    def silent(body: Body):
+        return body
 
 
 @pytest.fixture
@@ -57,6 +72,22 @@ def app_with_custom_root_type(app):
     @validate()
     def root_type(body: PersonBulk):
         return {"number": len(body)}
+
+
+@pytest.fixture
+def app_with_custom_headers(app):
+    @app.route("/custom_headers", methods=["GET"])
+    @validate()
+    def custom_headers():
+        return {"test": 1}, {"CUSTOM_HEADER": "UNIQUE"}
+
+
+@pytest.fixture
+def app_with_custom_headers_status(app):
+    @app.route("/custom_headers_status", methods=["GET"])
+    @validate()
+    def custom_headers():
+        return {"test": 1}, 201, {"CUSTOM_HEADER": "UNIQUE"}
 
 
 @pytest.fixture
@@ -143,6 +174,46 @@ test_cases = [
     ),
 ]
 
+form_test_cases = [
+    pytest.param(
+        "?limit=2",
+        {},
+        400,
+        {
+            "validation_error": {
+                "form_params": [
+                    {
+                        "loc": ["search_term"],
+                        "msg": "field required",
+                        "type": "value_error.missing",
+                    }
+                ]
+            }
+        },
+        id="missing required form parameter",
+    ),
+    pytest.param(
+        "?limit=1&min_views=2",
+        {"search_term": "text"},
+        200,
+        {"count": 2, "results": [{"title": "2", "text": "another text", "views": 2}]},
+        id="valid parameters",
+    ),
+    pytest.param(
+        "",
+        {"search_term": "text"},
+        200,
+        {
+            "count": 3,
+            "results": [
+                {"title": "title 1", "text": "random text", "views": 1},
+                {"title": "2", "text": "another text", "views": 2},
+            ],
+        },
+        id="valid params, no query",
+    ),
+]
+
 
 class TestSimple:
     @pytest.mark.parametrize("query,body,expected_status,expected_response", test_cases)
@@ -154,6 +225,19 @@ class TestSimple:
     @pytest.mark.parametrize("query,body,expected_status,expected_response", test_cases)
     def test_post_kwargs(self, client, query, body, expected_status, expected_response):
         response = client.post(f"/search/kwargs{query}", json=body)
+        assert response.json == expected_response
+        assert response.status_code == expected_status
+
+    @pytest.mark.parametrize(
+        "query,form,expected_status,expected_response", form_test_cases
+    )
+    def test_post_kwargs_form(
+        self, client, query, form, expected_status, expected_response
+    ):
+        response = client.post(
+            f"/search/form/kwargs{query}",
+            data=form,
+        )
         assert response.json == expected_response
         assert response.status_code == expected_status
 
@@ -172,6 +256,22 @@ def test_custom_root_types(client):
         json=[{"name": "Joshua Bardwell", "age": 46}, {"name": "Andrew Cambden"}],
     )
     assert response.json == {"number": 2}
+
+
+@pytest.mark.usefixtures("app_with_custom_headers")
+def test_custom_headers(client):
+    response = client.get("/custom_headers")
+    assert response.json == {"test": 1}
+    assert response.status_code == 200
+    assert response.headers.get("CUSTOM_HEADER") == "UNIQUE"
+
+
+@pytest.mark.usefixtures("app_with_custom_headers_status")
+def test_custom_headers(client):
+    response = client.get("/custom_headers_status")
+    assert response.json == {"test": 1}
+    assert response.status_code == 201
+    assert response.headers.get("CUSTOM_HEADER") == "UNIQUE"
 
 
 @pytest.mark.usefixtures("app_with_array_route")
@@ -258,3 +358,33 @@ class TestPathUnannotatedParameter:
         response = client.get(f"/path_param/{id_}/")
 
         assert response.json == expected_response
+
+
+@pytest.mark.usefixtures("app_with_optional_body")
+class TestGetJsonParams:
+    def test_empty_body_fails(self, client):
+        response = client.post(
+            "/no_params", headers={"Content-Type": "application/json"}
+        )
+
+        assert response.status_code == 400
+        assert (
+            "failed to decode json object: expecting value: line 1 column 1 (char 0)"
+            in response.text.lower()
+        )
+
+    def test_silent(self, client):
+        response = client.post("/silent", headers={"Content-Type": "application/json"})
+
+        assert response.json == {
+            "validation_error": {
+                "body_params": [
+                    {
+                        "loc": ["param"],
+                        "msg": "field required",
+                        "type": "value_error.missing",
+                    }
+                ]
+            }
+        }
+        assert response.status_code == 400

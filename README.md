@@ -15,14 +15,15 @@ Flask extension for integration of the awesome [pydantic package](https://github
 ## Basics
 ### URL query and body parameters
 
-`validate` decorator validates query and body request parameters and makes them accessible two ways:
+`validate` decorator validates query, body and form-data request parameters and makes them accessible two ways:
 
 1. [Using `validate` arguments, via flask's `request` variable](#basic-example)
 
 | **parameter type** | **`request` attribute name** |
-| :----------------: | :--------------------------: |
+|:------------------:|:----------------------------:|
 |       query        |        `query_params`        |
 |        body        |        `body_params`         |
+|        form        |        `form_params`         |
 
 2. [Using the decorated function argument parameters type hints](#using-the-decorated-function-kwargs)
 
@@ -45,6 +46,7 @@ flask_pydantic will parse and validate `user_id` variable in the same manner as 
 - Success response status code can be modified via `on_success_status` parameter of `validate` decorator.
 - `response_many` parameter set to `True` enables serialization of multiple models (route function should therefore return iterable of models).
 - `request_body_many` parameter set to `False` analogically enables serialization of multiple models inside of the root level of request body. If the request body doesn't contain an array of objects `400` response is returned,
+- `get_json_params` - parameters to be passed to [`flask.Request.get_json`](https://tedboy.github.io/flask/generated/generated/flask.Request.get_json.html) function
 - If validation fails, `400` response is returned with failure explanation.
 
 For more details see in-code docstring or example app.
@@ -191,7 +193,27 @@ def get_and_post(body: RequestBodyModel,query: QueryModel):
 </a>
 
 
+### Example 5: Request form-data only
 
+```python
+class RequestFormDataModel(BaseModel):
+  name: str
+  nickname: Optional[str]
+
+# Example2: request body only
+@app.route("/", methods=["POST"])
+@validate()
+def post(form: RequestFormDataModel): 
+  name = form.name
+  nickname = form.nickname
+  return ResponseModel(
+    name=name, nickname=nickname,id=0, age=1000
+    )
+```
+
+<a href="blob/master/example_app/example.py">
+  See the full example app here
+</a>
 
 ### Modify response status code
 
