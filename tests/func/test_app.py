@@ -75,6 +75,22 @@ def app_with_custom_root_type(app):
 
 
 @pytest.fixture
+def app_with_custom_headers(app):
+    @app.route("/custom_headers", methods=["GET"])
+    @validate()
+    def custom_headers():
+        return {"test": 1}, {"CUSTOM_HEADER": "UNIQUE"}
+
+
+@pytest.fixture
+def app_with_custom_headers_status(app):
+    @app.route("/custom_headers_status", methods=["GET"])
+    @validate()
+    def custom_headers():
+        return {"test": 1}, 201, {"CUSTOM_HEADER": "UNIQUE"}
+
+
+@pytest.fixture
 def app_with_camel_route(app):
     def to_camel(x: str) -> str:
         first, *rest = x.split("_")
@@ -240,6 +256,22 @@ def test_custom_root_types(client):
         json=[{"name": "Joshua Bardwell", "age": 46}, {"name": "Andrew Cambden"}],
     )
     assert response.json == {"number": 2}
+
+
+@pytest.mark.usefixtures("app_with_custom_headers")
+def test_custom_headers(client):
+    response = client.get("/custom_headers")
+    assert response.json == {"test": 1}
+    assert response.status_code == 200
+    assert response.headers.get("CUSTOM_HEADER") == "UNIQUE"
+
+
+@pytest.mark.usefixtures("app_with_custom_headers_status")
+def test_custom_headers(client):
+    response = client.get("/custom_headers_status")
+    assert response.json == {"test": 1}
+    assert response.status_code == 201
+    assert response.headers.get("CUSTOM_HEADER") == "UNIQUE"
 
 
 @pytest.mark.usefixtures("app_with_array_route")
