@@ -2,24 +2,25 @@ from typing import Any, List, NamedTuple, Optional, Type, Union
 
 import pytest
 from flask import jsonify
-from pydantic import BaseModel
-from werkzeug.datastructures import ImmutableMultiDict
-
 from flask_pydantic import validate
 from flask_pydantic.core import convert_query_params, is_iterable_of_models
 from flask_pydantic.exceptions import (
     InvalidIterableOfModelsException,
     JsonBodyParsingError,
 )
+from pydantic import BaseModel
+from werkzeug.datastructures import ImmutableMultiDict
 
 
 class ValidateParams(NamedTuple):
     body_model: Optional[Type[BaseModel]] = None
     query_model: Optional[Type[BaseModel]] = None
+    form_model: Optional[Type[BaseModel]] = None
     response_model: Type[BaseModel] = None
     on_success_status: int = 200
     request_query: ImmutableMultiDict = ImmutableMultiDict({})
     request_body: Union[dict, List[dict]] = {}
+    request_form: ImmutableMultiDict = ImmutableMultiDict({})
     expected_response_body: Optional[dict] = None
     expected_status_code: int = 200
     exclude_none: bool = False
@@ -44,6 +45,11 @@ class RequestBodyModel(BaseModel):
     b2: Optional[str] = None
 
 
+class FormModel(BaseModel):
+    f1: int
+    f2: str = None
+
+
 class RequestBodyModelRoot(BaseModel):
     __root__: Union[str, RequestBodyModel]
 
@@ -53,6 +59,8 @@ validate_test_cases = [
         ValidateParams(
             request_body={"b1": 1.4},
             request_query=ImmutableMultiDict({"q1": 1}),
+            request_form=ImmutableMultiDict({"f1": 1}),
+            form_model=FormModel,
             expected_response_body={"q1": 1, "q2": "default", "b1": 1.4, "b2": None},
             response_model=ResponseModel,
             query_model=QueryModel,
@@ -64,6 +72,8 @@ validate_test_cases = [
         ValidateParams(
             request_body={"b1": 1.4},
             request_query=ImmutableMultiDict({"q1": 1}),
+            request_form=ImmutableMultiDict({"f1": 1}),
+            form_model=FormModel,
             expected_response_body={"q1": 1, "q2": "default", "b1": 1.4},
             response_model=ResponseModel,
             query_model=QueryModel,
@@ -148,6 +158,24 @@ validate_test_cases = [
         ),
         id="invalid body param in many-object request body",
     ),
+    pytest.param(
+        ValidateParams(
+            form_model=FormModel,
+            expected_response_body={
+                "validation_error": {
+                    "form_params": [
+                        {
+                            "loc": ["f1"],
+                            "msg": "field required",
+                            "type": "value_error.missing",
+                        }
+                    ]
+                }
+            },
+            expected_status_code=400,
+        ),
+        id="invalid form param",
+    ),
 ]
 
 
@@ -157,11 +185,18 @@ class TestValidate:
         mock_request = mocker.patch.object(request_ctx, "request")
         mock_request.args = parameters.request_query
         mock_request.get_json = lambda: parameters.request_body
+        mock_request.form = parameters.request_form
 
         def f():
-            return parameters.response_model(
-                **mock_request.body_params.dict(), **mock_request.query_params.dict()
-            )
+            body = {}
+            query = {}
+            if mock_request.form_params:
+                body = mock_request.form_params.dict()
+            if mock_request.body_params:
+                body = mock_request.body_params.dict()
+            if mock_request.query_params:
+                query = mock_request.query_params.dict()
+            return parameters.response_model(**body, **query)
 
         response = validate(
             query=parameters.query_model,
@@ -170,6 +205,7 @@ class TestValidate:
             exclude_none=parameters.exclude_none,
             response_many=parameters.response_many,
             request_body_many=parameters.request_body_many,
+            form=parameters.form_model,
         )(f)()
 
         assert response.status_code == parameters.expected_status_code
@@ -188,9 +224,16 @@ class TestValidate:
         mock_request = mocker.patch.object(request_ctx, "request")
         mock_request.args = parameters.request_query
         mock_request.get_json = lambda: parameters.request_body
+        mock_request.form = parameters.request_form
 
-        def f(body: parameters.body_model, query: parameters.query_model):
-            return parameters.response_model(**body.dict(), **query.dict())
+        def f(
+            body: parameters.body_model,
+            query: parameters.query_model,
+            form: parameters.form_model,
+        ):
+            return parameters.response_model(
+                **body.dict(), **query.dict(), **form.dict()
+            )
 
         response = validate(
             on_success_status=parameters.on_success_status,
@@ -199,8 +242,8 @@ class TestValidate:
             request_body_many=parameters.request_body_many,
         )(f)()
 
-        assert response.status_code == parameters.expected_status_code
         assert response.json == parameters.expected_response_body
+        assert response.status_code == parameters.expected_status_code
         if 200 <= response.status_code < 300:
             assert (
                 mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
@@ -276,7 +319,10 @@ class TestValidate:
             body_params = mock_request.body_params
             return [
                 ResponseModel(
-                    q1=query_params.q1, q2=query_params.q2, b1=obj.b1, b2=obj.b2
+                    q1=query_params.q1,
+                    q2=query_params.q2,
+                    b1=obj.b1,
+                    b2=obj.b2,
                 )
                 for obj in body_params
             ]
@@ -349,15 +395,23 @@ class TestValidate:
         mock_request = mocker.patch.object(request_ctx, "request")
         mock_request.args = parameters.request_query
         mock_request.get_json = lambda: parameters.request_body
+        mock_request.form = parameters.request_form
 
         def f() -> Any:
-            return parameters.response_model(
-                **mock_request.body_params.dict(), **mock_request.query_params.dict()
-            )
+            body = {}
+            query = {}
+            if mock_request.form_params:
+                body = mock_request.form_params.dict()
+            if mock_request.body_params:
+                body = mock_request.body_params.dict()
+            if mock_request.query_params:
+                query = mock_request.query_params.dict()
+            return parameters.response_model(**body, **query)
 
         response = validate(
             query=parameters.query_model,
             body=parameters.body_model,
+            form=parameters.form_model,
             on_success_status=parameters.on_success_status,
             exclude_none=parameters.exclude_none,
             response_many=parameters.response_many,
