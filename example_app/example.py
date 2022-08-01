@@ -2,7 +2,7 @@ from typing import Optional
 
 from flask import Flask
 from flask_pydantic import validate
-from pydantic import BaseModel
+from pydantic import BaseModel, add_openapi_spec, openapi_docs
 
 app = Flask("flask_pydantic_app")
 
@@ -16,12 +16,20 @@ class QueryModel(BaseModel):
     age: int
 
 
+class ResponseModel(BaseModel):
+    id: int
+    age: int
+    name: str
+    nickname: Optional[str]
+
+
 class FormModel(BaseModel):
     name: str
     nickname: Optional[str]
 
 
 @app.route("/", methods=["GET"])
+@openapi_docs(response=ResponseModel)
 @validate()
 def get(query: QueryModel):
     age = query.age
@@ -37,14 +45,8 @@ curl --location --request GET 'http://127.0.0.1:5000/?age=5'
 """
 
 
-class ResponseModel(BaseModel):
-    id: int
-    age: int
-    name: str
-    nickname: Optional[str]
-
-
 @app.route("/character/<character_id>/", methods=["GET"])
+@openapi_docs()
 @validate()
 def get_character(character_id: int):
     characters = [
@@ -66,6 +68,7 @@ curl http://127.0.0.1:5000/character/2/ \
 
 
 @app.route("/", methods=["POST"])
+@openapi_docs()
 @validate()
 def post(body: RequestBodyModel):
     name = body.name
@@ -110,6 +113,7 @@ curl --location --request POST 'http://127.0.0.1:5000/form' \
 
 
 @app.route("/both", methods=["POST"])
+@openapi_docs()
 @validate()
 def get_and_post(body: RequestBodyModel, query: QueryModel):
     name = body.name  # From request body
@@ -128,6 +132,7 @@ curl --location --request POST 'http://127.0.0.1:5000/both?age=40' \
 --data-raw '{"name":123}'
 """
 
+add_openapi_spec(app)
 
 if __name__ == "__main__":
     app.run()

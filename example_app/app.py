@@ -1,8 +1,9 @@
 from dataclasses import dataclass
+from flask_pydantic.openapi import APIError
 from typing import Optional
 
 from flask import Flask, jsonify, request
-from flask_pydantic import validate
+from flask_pydantic import validate, add_openapi_spec, openapi_docs
 from pydantic import BaseModel
 
 app = Flask("flask_pydantic_app")
@@ -42,6 +43,7 @@ class ResponseModel(BaseModel):
 
 
 @app.route("/", methods=["POST"])
+@openapi_docs(response=ResponseModel)
 @validate(body=BodyModel, query=QueryModel)
 def post():
     """
@@ -76,6 +78,7 @@ def post():
 
 
 @app.route("/kwargs", methods=["POST"])
+@openapi_docs(response=ResponseModel, tags=["kwargs"])
 @validate()
 def post_kwargs(body: BodyModel, query: QueryModel):
     """
@@ -102,6 +105,7 @@ def post_kwargs(form: FormModel, query: QueryModel):
 
 
 @app.route("/many", methods=["GET"])
+@openapi_docs(exceptions=[APIError(code=403, msg="Access Denied")])
 @validate(response_many=True)
 def get_many():
     """
@@ -126,3 +130,6 @@ def select_from_array():
         return BodyModel(**request.body_params[request.query_params.index].dict())
     except IndexError:
         return jsonify({"reason": "index out of bound"}), 400
+
+
+add_openapi_spec(app)
