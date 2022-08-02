@@ -429,6 +429,27 @@ class TestValidate:
                 exclude_none=True, exclude_defaults=True
             ) == parameters.request_query.to_dict(flat=True)
 
+    def test_fail_validation_custom_status_code(self, app, request_ctx, mocker):
+        app.config["FLASK_PYDANTIC_VALIDATION_ERROR_STATUS_CODE"] = 422
+        mock_request = mocker.patch.object(request_ctx, "request")
+        content_type = "application/json"
+        mock_request.headers = {"Content-Type": content_type}
+        mock_request.get_json = lambda: None
+        body_model = RequestBodyModelRoot
+        response = validate(body_model)(lambda x: x)()
+        assert response.status_code == 422
+        assert response.json == {
+            "validation_error": {
+                "body_params": [
+                    {
+                        "loc": ["__root__"],
+                        "msg": "none is not an allowed value",
+                        "type": "type_error.none.not_allowed",
+                    }
+                ]
+            }
+        }
+
 
 class TestIsIterableOfModels:
     def test_simple_true_case(self):
