@@ -2,7 +2,7 @@ from typing import Any, List, NamedTuple, Optional, Type, Union
 
 import pytest
 from flask import jsonify
-from flask_pydantic import validate
+from flask_pydantic import validate, ValidationError
 from flask_pydantic.core import convert_query_params, is_iterable_of_models
 from flask_pydantic.exceptions import (
     InvalidIterableOfModelsException,
@@ -449,6 +449,57 @@ class TestValidate:
                 ]
             }
         }
+
+    def test_body_fail_validation_raise_exception(self, app, request_ctx, mocker):
+        app.config["FLASK_PYDANTIC_VALIDATION_ERROR_RAISE"] = True
+        mock_request = mocker.patch.object(request_ctx, "request")
+        content_type = "application/json"
+        mock_request.headers = {"Content-Type": content_type}
+        mock_request.get_json = lambda: None
+        body_model = RequestBodyModelRoot
+        with pytest.raises(ValidationError) as excinfo:
+            response = validate(body_model)(lambda x: x)()
+        assert excinfo.value.body_params == [
+            {
+                "loc": ("__root__",),
+                "msg": "none is not an allowed value",
+                "type": "type_error.none.not_allowed",
+            }
+        ]
+
+    def test_query_fail_validation_raise_exception(self, app, request_ctx, mocker):
+        app.config["FLASK_PYDANTIC_VALIDATION_ERROR_RAISE"] = True
+        mock_request = mocker.patch.object(request_ctx, "request")
+        content_type = "application/json"
+        mock_request.headers = {"Content-Type": content_type}
+        mock_request.get_json = lambda: None
+        query_model = QueryModel
+        with pytest.raises(ValidationError) as excinfo:
+            response = validate(query=query_model)(lambda x: x)()
+        assert excinfo.value.query_params == [
+            {
+                "loc": ("q1",),
+                "msg": "field required",
+                "type": "value_error.missing",
+            }
+        ]
+
+    def test_form_fail_validation_raise_exception(self, app, request_ctx, mocker):
+        app.config["FLASK_PYDANTIC_VALIDATION_ERROR_RAISE"] = True
+        mock_request = mocker.patch.object(request_ctx, "request")
+        content_type = "application/json"
+        mock_request.headers = {"Content-Type": content_type}
+        mock_request.get_json = lambda: None
+        form_model = FormModel
+        with pytest.raises(ValidationError) as excinfo:
+            response = validate(form=form_model)(lambda x: x)()
+        assert excinfo.value.form_params == [
+            {
+                "loc": ("f1",),
+                "msg": "field required",
+                "type": "value_error.missing",
+            }
+        ]
 
 
 class TestIsIterableOfModels:

@@ -1,8 +1,8 @@
 from typing import List, Optional
 
 import pytest
-from flask import request
-from flask_pydantic import validate
+from flask import jsonify, request
+from flask_pydantic import validate, ValidationError
 from pydantic import BaseModel
 
 
@@ -30,6 +30,32 @@ def app_with_optional_body(app):
     @validate()
     def no_params(body: Body):
         return body
+
+    @app.route("/silent", methods=["POST"])
+    @validate(get_json_params={"silent": True})
+    def silent(body: Body):
+        return body
+
+
+@pytest.fixture
+def app_raise_on_validation_error(app):
+    app.config["FLASK_PYDANTIC_VALIDATION_ERROR_RAISE"] = True
+
+    def validation_error(error: ValidationError):
+        return (
+            jsonify(
+                {
+                    "title": "validation error",
+                    "body": error.body_params,
+                }
+            ),
+            422,
+        )
+
+    app.register_error_handler(ValidationError, validation_error)
+
+    class Body(BaseModel):
+        param: str
 
     @app.route("/silent", methods=["POST"])
     @validate(get_json_params={"silent": True})
@@ -388,3 +414,19 @@ class TestGetJsonParams:
             }
         }
         assert response.status_code == 400
+
+
+@pytest.mark.usefixtures("app_raise_on_validation_error")
+class TestCustomResponse:
+    def test_silent(self, client):
+        response = client.post("/silent", headers={"Content-Type": "application/json"})
+
+        assert response.json["title"] == "validation error"
+        assert response.json["body"] == [
+            {
+                "loc": ["param"],
+                "msg": "field required",
+                "type": "value_error.missing",
+            }
+        ]
+        assert response.status_code == 422
