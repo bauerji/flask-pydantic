@@ -1,7 +1,8 @@
 from functools import wraps
 from typing import Any, Callable, Iterable, List, Optional, Tuple, Type, Union
 
-from flask import Response, current_app, jsonify, make_response, request
+from flask import current_app, jsonify, make_response, request
+from flask.wrappers import Response
 from pydantic import BaseModel, ValidationError
 from pydantic.tools import parse_obj_as
 
@@ -11,6 +12,8 @@ from .exceptions import (
     JsonBodyParsingError,
     ManyModelValidationError,
 )
+
+from .openapi import OpenAPI, APIError
 
 try:
     from flask_restful import original_flask_make_response as make_response
@@ -288,6 +291,9 @@ def validate(
 
             return res
 
+        # register this decorator's args
+        setattr(wrapper, "_body", body)
+        setattr(wrapper, "_query", query)
         return wrapper
 
     return decorate
