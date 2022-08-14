@@ -297,6 +297,87 @@ def my_route():
     return MyModel(...)
 ```
 
+### OpenAPI Specs
+
+To add OpenAPI 3.0 specification, please follow these examples:
+
+#### Only add `query` or `body` in document.
+
+```python
+# necessary imports
+
+app = Flask(__name___)
+
+@app.route("/post", methods=["POST"])
+@openapi_docs()
+@validate()
+def post(body: BodyModel, query: QueryModel):
+    return ResponseModel(
+        ...
+    )
+
+...
+
+# to register `/docs/` to the `app`
+add_openapi_spec(app)
+
+```
+
+#### Add `response`, `exceptions` and `tags` in document
+
+```python
+# necessary imports
+
+app = Flask(__name___)
+
+from flask_pydantic.openapi import APIError
+
+access_denied = APIError(code=403, msg="Access Denied")
+
+@app.route("/post", methods=["POST"])
+@openapi_docs(response=ResponseModel, tags=["demo"], exceptions=[access_denied])
+@validate()
+def post(body: BodyModel, query: QueryModel):
+    return ResponseModel(
+        id=id_,
+        age=query.age,
+        name=body.name,
+        nickname=body.nickname,
+    )
+...
+
+# to register `/docs/` to the `app`
+add_openapi_spec(app)
+```
+
+#### Add Auth Security Schemes
+
+```python
+# necessary imports, app and model definition
+# add routes on app or blueprint
+app.register_blueprint(some_blueprint)
+...
+
+# register openapi docs blueprint to `app`
+add_openapi_spec(
+    app,
+    extra_props={
+        "components": {
+            "securitySchemes": {
+                "bearerAuth": {
+                    "type": "http",
+                    "scheme": "bearer",
+                    "bearerFormat": "JWT",
+                    "in": "header",
+                }
+            }
+        },
+        "security": [{"bearerAuth": []}]
+    },
+)
+
+```
+
 ### Example app
 
 For more complete examples see [example application](https://github.com/bauerji/flask_pydantic/tree/master/example_app).
