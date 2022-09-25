@@ -306,6 +306,12 @@ For more complete examples see [example application](https://github.com/bauerji/
 The behaviour can be configured using flask's application config
 `FLASK_PYDANTIC_VALIDATION_ERROR_STATUS_CODE` - response status code after validation error (defaults to `400`)
 
+Additionally, you can set `FLASK_PYDANTIC_VALIDATION_ERROR_RAISE` to `True` to cause
+`flask_pydantic.ValidationError` to be raised with either `body_params`,
+`form_params`, `path_params`, or `query_params` set as a list of error
+dictionaries. You can use `flask.Flask.register_error_handler` to catch that
+exception and fully customize the output response for a validation error.
+
 ## Contributing
 
 Feature requests and pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.

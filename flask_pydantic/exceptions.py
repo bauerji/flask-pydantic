@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 
 class BaseFlaskPydanticException(Exception):
@@ -30,3 +30,21 @@ class ManyModelValidationError(BaseFlaskPydanticException):
 
     def errors(self):
         return self._errors
+
+
+class ValidationError(BaseFlaskPydanticException):
+    """This exception is raised if there is a failure during validation if the
+    user has configured an exception to be raised instead of a response"""
+
+    def __init__(
+        self,
+        body_params: Optional[List[dict]] = None,
+        form_params: Optional[List[dict]] = None,
+        path_params: Optional[List[dict]] = None,
+        query_params: Optional[List[dict]] = None,
+    ):
+        super().__init__()
+        self.body_params = body_params
+        self.form_params = form_params
+        self.path_params = path_params
+        self.query_params = query_params

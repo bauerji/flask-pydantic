@@ -11,6 +11,7 @@ from .exceptions import (
     JsonBodyParsingError,
     ManyModelValidationError,
 )
+from .exceptions import ValidationError as FailedValidation
 
 try:
     from flask_restful import original_flask_make_response as make_response
@@ -235,10 +236,18 @@ def validate(
                 kwargs["form"] = f
 
             if err:
-                status_code = current_app.config.get(
-                    "FLASK_PYDANTIC_VALIDATION_ERROR_STATUS_CODE", 400
-                )
-                return make_response(jsonify({"validation_error": err}), status_code)
+                if current_app.config.get(
+                    "FLASK_PYDANTIC_VALIDATION_ERROR_RAISE", False
+                ):
+                    raise FailedValidation(**err)
+                else:
+                    status_code = current_app.config.get(
+                        "FLASK_PYDANTIC_VALIDATION_ERROR_STATUS_CODE", 400
+                    )
+                    return make_response(
+                        jsonify({"validation_error": err}),
+                        status_code
+                    )
             res = func(*args, **kwargs)
 
             if response_many:
