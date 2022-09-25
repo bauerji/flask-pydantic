@@ -215,9 +215,10 @@ class TestValidate:
                 mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
                 == parameters.request_body
             )
-            assert mock_request.query_params.dict(
-                exclude_none=True, exclude_defaults=True
-            ) == parameters.request_query.to_dict(flat=True)
+            assert (
+                mock_request.query_params.dict(exclude_none=True, exclude_defaults=True)
+                == parameters.request_query.to_dict()
+            )
 
     @pytest.mark.parametrize("parameters", validate_test_cases)
     def test_validate_kwargs(self, mocker, request_ctx, parameters: ValidateParams):
@@ -249,9 +250,10 @@ class TestValidate:
                 mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
                 == parameters.request_body
             )
-            assert mock_request.query_params.dict(
-                exclude_none=True, exclude_defaults=True
-            ) == parameters.request_query.to_dict(flat=True)
+            assert (
+                mock_request.query_params.dict(exclude_none=True, exclude_defaults=True)
+                == parameters.request_query.to_dict()
+            )
 
     @pytest.mark.usefixtures("request_ctx")
     def test_response_with_status(self):
@@ -425,9 +427,10 @@ class TestValidate:
                 mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
                 == parameters.request_body
             )
-            assert mock_request.query_params.dict(
-                exclude_none=True, exclude_defaults=True
-            ) == parameters.request_query.to_dict(flat=True)
+            assert (
+                mock_request.query_params.dict(exclude_none=True, exclude_defaults=True)
+                == parameters.request_query.to_dict()
+            )
 
     def test_fail_validation_custom_status_code(self, app, request_ctx, mocker):
         app.config["FLASK_PYDANTIC_VALIDATION_ERROR_STATUS_CODE"] = 422
@@ -458,7 +461,7 @@ class TestValidate:
         mock_request.get_json = lambda: None
         body_model = RequestBodyModelRoot
         with pytest.raises(ValidationError) as excinfo:
-            response = validate(body_model)(lambda x: x)()
+            validate(body_model)(lambda x: x)()
         assert excinfo.value.body_params == [
             {
                 "loc": ("__root__",),
@@ -475,7 +478,7 @@ class TestValidate:
         mock_request.get_json = lambda: None
         query_model = QueryModel
         with pytest.raises(ValidationError) as excinfo:
-            response = validate(query=query_model)(lambda x: x)()
+            validate(query=query_model)(lambda x: x)()
         assert excinfo.value.query_params == [
             {
                 "loc": ("q1",),
@@ -492,7 +495,7 @@ class TestValidate:
         mock_request.get_json = lambda: None
         form_model = FormModel
         with pytest.raises(ValidationError) as excinfo:
-            response = validate(form=form_model)(lambda x: x)()
+            validate(form=form_model)(lambda x: x)()
         assert excinfo.value.form_params == [
             {
                 "loc": ("f1",),
@@ -556,7 +559,7 @@ convert_query_params_test_cases = [
 @pytest.mark.parametrize(
     "query_params,expected_result", convert_query_params_test_cases
 )
-def test_convert_query_params(query_params, expected_result):
+def test_convert_query_params(query_params: ImmutableMultiDict, expected_result: dict):
     class Model(BaseModel):
         a: int
         b: str
