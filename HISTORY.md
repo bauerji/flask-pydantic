@@ -1,5 +1,9 @@
 # Release history
 
+## 0.11.0 (2022-09-25)
+### Features
+- Allow raising `flask_pydantic.ValidationError` by setting `FLASK_PYDANTIC_VALIDATION_ERROR_RAISE=True`
+
 ## 0.10.0 (2022-07-31)
 ### Features
 - Add validation for form data
