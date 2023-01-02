@@ -88,7 +88,7 @@ def get(query: QueryModel):
     )
 ```
 
-<a href="blob/master/example_app/example.py">
+<a href="example_app/example.py">
   See the full example app here
 </a>
 
@@ -160,7 +160,7 @@ class RequestBodyModel(BaseModel):
 # Example2: request body only
 @app.route("/", methods=["POST"])
 @validate()
-def post(body: RequestBodyModel): 
+def post(body: RequestBodyModel):
   name = body.name
   nickname = body.nickname
   return ResponseModel(
@@ -168,7 +168,7 @@ def post(body: RequestBodyModel):
     )
 ```
 
-<a href="blob/master/example_app/example.py">
+<a href="example_app/example.py">
   See the full example app here
 </a>
 
@@ -188,7 +188,7 @@ def get_and_post(body: RequestBodyModel,query: QueryModel):
   )
 ```
 
-<a href="blob/master/example_app/example.py">
+<a href="example_app/example.py">
   See the full example app here
 </a>
 
@@ -203,7 +203,7 @@ class RequestFormDataModel(BaseModel):
 # Example2: request body only
 @app.route("/", methods=["POST"])
 @validate()
-def post(form: RequestFormDataModel): 
+def post(form: RequestFormDataModel):
   name = form.name
   nickname = form.nickname
   return ResponseModel(
@@ -211,7 +211,7 @@ def post(form: RequestFormDataModel):
     )
 ```
 
-<a href="blob/master/example_app/example.py">
+<a href="example_app/example.py">
   See the full example app here
 </a>
 
