@@ -1,4 +1,6 @@
 from typing import List, Optional
+from functools import reduce
+
 
 import pytest
 from flask import jsonify, request
@@ -123,8 +125,8 @@ def app_with_camel_route(app):
         return "".join([first] + [x.capitalize() for x in rest])
 
     class RequestModel(BaseModel):
-        x: int
-        y: int
+        initial_value: int
+        operands_to_use: List[int]
 
     class ResultModel(BaseModel):
         result_of_addition: int
@@ -138,8 +140,8 @@ def app_with_camel_route(app):
     @validate(response_by_alias=True)
     def compute(query: RequestModel):
         return ResultModel(
-            result_of_addition=query.x + query.y,
-            result_of_multiplication=query.x * query.y,
+            result_of_addition=reduce(sum, query.operands_to_use, query.initial_value),
+            result_of_multiplication=reduce(lambda x,y: x * y, query.operands_to_use, query.initial_value),
         )
 
 
@@ -330,16 +332,25 @@ class TestArrayQueryParam:
 
 
 aliases_test_cases = [
-    pytest.param(1, 2, {"resultOfMultiplication": 2, "resultOfAddition": 3}),
-    pytest.param(10, 20, {"resultOfMultiplication": 200, "resultOfAddition": 30}),
-    pytest.param(999, 0, {"resultOfMultiplication": 0, "resultOfAddition": 999}),
+    pytest.param(1, [2], {"resultOfMultiplication": 2, "resultOfAddition": 3}),
+    pytest.param(10, [20, 10], {"resultOfMultiplication": 2000, "resultOfAddition": 40}),
+    pytest.param(999, [0, 1], {"resultOfMultiplication": 0, "resultOfAddition": 1000}),
 ]
 
 
 @pytest.mark.usefixtures("app_with_camel_route")
-@pytest.mark.parametrize("x,y,expected_result", aliases_test_cases)
-def test_aliases(x, y, expected_result, client):
-    response = client.get(f"/compute?x={x}&y={y}")
+@pytest.mark.parametrize("initial_value,operands_to_use,expected_result", aliases_test_cases)
+def test_no_aliases_in_request_and_aliases_in_response(initial_value, operands_to_use, expected_result, client):
+    response = client.get(f"/compute?initial_value={initial_value}"
+                          f"&operands_to_use={'&operands_to_use='.join(map(str, operands_to_use))}")
+    assert response.json == expected_result
+
+
+@pytest.mark.usefixtures("app_with_camel_route")
+@pytest.mark.parametrize("initial_value,operands_to_use,expected_result", aliases_test_cases)
+def test_aliases_in_request_and_response(initial_value, operands_to_use, expected_result, client):
+    response = client.get(f"/compute?initialValue={initial_value}"
+                          f"&operandsToUse={'&operandsToUse='.join(map(str, operands_to_use))}")
     assert response.json == expected_result
 
 
