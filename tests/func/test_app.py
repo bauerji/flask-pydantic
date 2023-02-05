@@ -86,6 +86,17 @@ def app_with_untyped_path_param_route(app):
 
 
 @pytest.fixture
+def app_with_non_pydantic_argument(app):
+    class IdObj(BaseModel):
+        id: str
+
+    @app.route("/path_param/<obj_id>/", methods=["GET"])
+    @validate()
+    def int_path_param(obj_id: str, non_pydantic: ValidationError = None):
+        return IdObj(id=obj_id)
+
+
+@pytest.fixture
 def app_with_custom_root_type(app):
     class Person(BaseModel):
         name: str
@@ -371,6 +382,23 @@ class TestPathIntParameter:
 
 @pytest.mark.usefixtures("app_with_untyped_path_param_route")
 class TestPathUnannotatedParameter:
+    def test_int_str_param_passes(self, client):
+        id_ = 12
+        expected_response = {"id": str(id_)}
+        response = client.get(f"/path_param/{id_}/")
+
+        assert response.json == expected_response
+
+    def test_str_param_passes(self, client):
+        id_ = "twelve"
+        expected_response = {"id": id_}
+        response = client.get(f"/path_param/{id_}/")
+
+        assert response.json == expected_response
+
+
+@pytest.mark.usefixtures("app_with_non_pydantic_argument")
+class TestFunctionArgument:
     def test_int_str_param_passes(self, client):
         id_ = 12
         expected_response = {"id": str(id_)}
