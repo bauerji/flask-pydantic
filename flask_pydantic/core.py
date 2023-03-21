@@ -77,6 +77,8 @@ def validate_path_params(func: Callable, kwargs: dict) -> Tuple[dict, list]:
         try:
             value = parse_obj_as(type_, kwargs.get(name))
             validated[name] = value
+        except RuntimeError:
+            continue
         except ValidationError as e:
             err = e.errors()[0]
             err["loc"] = [name]
