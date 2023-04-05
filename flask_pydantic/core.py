@@ -251,7 +251,7 @@ def validate(
             res = func(*args, **kwargs)
 
             if response_many:
-                if is_iterable_of_models(res):
+                if is_iterable_of_models(res) or len(res) == 0:
                     return make_json_response(
                         res,
                         on_success_status,
