@@ -7,4 +7,6 @@ pytest-coverage
 pytest-black
 pytest-mock
 
+black
+flake8
 mypy
