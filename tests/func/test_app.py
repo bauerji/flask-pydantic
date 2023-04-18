@@ -97,7 +97,7 @@ def app_with_custom_root_type(app):
     @app.route("/root_type", methods=["POST"])
     @validate()
     def root_type(body: PersonBulk):
-        return {"number": len(body)}
+        return {"number": len(body)}  # type: ignore
 
 
 @pytest.fixture
@@ -293,7 +293,7 @@ def test_custom_headers(client):
 
 
 @pytest.mark.usefixtures("app_with_custom_headers_status")
-def test_custom_headers(client):
+def test_custom_headers_201_status(client):
     response = client.get("/custom_headers_status")
     assert response.json == {"test": 1}
     assert response.status_code == 201

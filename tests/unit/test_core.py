@@ -16,7 +16,7 @@ class ValidateParams(NamedTuple):
     body_model: Optional[Type[BaseModel]] = None
     query_model: Optional[Type[BaseModel]] = None
     form_model: Optional[Type[BaseModel]] = None
-    response_model: Type[BaseModel] = None
+    response_model: Optional[Type[BaseModel]] = None
     on_success_status: int = 200
     request_query: ImmutableMultiDict = ImmutableMultiDict({})
     request_body: Union[dict, List[dict]] = {}
@@ -47,7 +47,7 @@ class RequestBodyModel(BaseModel):
 
 class FormModel(BaseModel):
     f1: int
-    f2: str = None
+    f2: Optional[str] = None
 
 
 class RequestBodyModelRoot(BaseModel):
@@ -228,10 +228,11 @@ class TestValidate:
         mock_request.form = parameters.request_form
 
         def f(
-            body: parameters.body_model,
-            query: parameters.query_model,
-            form: parameters.form_model,
+            body: parameters.body_model,  # type: ignore
+            query: parameters.query_model,  # type: ignore
+            form: parameters.form_model,  # type: ignore
         ):
+            assert parameters.response_model is not None
             return parameters.response_model(
                 **body.dict(), **query.dict(), **form.dict()
             )
@@ -408,6 +409,7 @@ class TestValidate:
                 body = mock_request.body_params.dict()
             if mock_request.query_params:
                 query = mock_request.query_params.dict()
+            assert parameters.response_model is not None
             return parameters.response_model(**body, **query)
 
         response = validate(
