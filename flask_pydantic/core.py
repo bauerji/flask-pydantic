@@ -1,3 +1,4 @@
+import inspect
 from collections.abc import Iterable
 from functools import wraps
 from typing import (
@@ -10,7 +11,9 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    TypeVar,
     Union,
+    get_args,
 )
 
 from flask import Response, current_app, jsonify, request
@@ -126,25 +129,42 @@ def get_body_dict(**params: Dict[str, Any]) -> Any:
     return data
 
 
+def _get_type_generic(hint: Any):
+    """Extract type information from bound TypeVar or Type[TypeVar]."""
+    if isinstance(hint, TypeVar):
+        assert (
+            getattr(hint, "__bound__", None) is not None
+        ), "If using TypeVar, you need to specify bound model."
+        return getattr(hint, "__bound__")
+
+    args = get_args(hint)
+    if len(args) > 0 and isinstance(args[0], TypeVar):
+        assert (
+            getattr(args[0], "__bound__", None) is not None
+        ), "If using TypeVar, you need to specify bound model."
+        return getattr(args[0], "__bound__")
+
+    return hint
+
+
 def _ensure_model_kwarg(
     kwarg_name: str,
     from_validate: Optional[Type[BaseModel]],
     func: ModelRouteCallable,
 ) -> Tuple[Optional[Type[BaseModel]], bool]:
     """Get model information either from wrapped function or validate kwargs."""
-    in_func_kwargs = func.__annotations__.get(kwarg_name)
-    if in_func_kwargs is None:
-        return from_validate, False
-    assert isinstance(in_func_kwargs, type) and issubclass(
-        in_func_kwargs, BaseModel
-    ), "Model in function arguments needs to be a BaseModel."
+    func_spec = inspect.getfullargspec(func)
+    in_func_arg = kwarg_name in func_spec.args or kwarg_name in func_spec.kwonlyargs
+    from_func = _get_type_generic(func_spec.annotations.get(kwarg_name))
+    if from_func is None or not isinstance(from_func, type):
+        return _get_type_generic(from_validate), in_func_arg
 
     # Ensure that the most "detailed" model is used.
     if from_validate is None:
-        return in_func_kwargs, True
-    if issubclass(in_func_kwargs, from_validate):
-        return in_func_kwargs, True
-    return from_validate, True
+        return from_func, in_func_arg
+    if issubclass(from_func, from_validate):
+        return from_func, in_func_arg
+    return from_validate, in_func_arg
 
 
 def validate(
