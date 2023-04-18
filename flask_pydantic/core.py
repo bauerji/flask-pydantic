@@ -13,11 +13,11 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    get_args,
 )
 
 from flask import Response, current_app, jsonify, request
 from flask.typing import ResponseReturnValue, RouteCallable
+from typing_extensions import get_args
 
 try:
     from flask_restful import (  # type: ignore
