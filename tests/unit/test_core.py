@@ -1,9 +1,14 @@
-from typing import Any, List, NamedTuple, Optional, Type, Union
+from typing import Any, List, NamedTuple, Optional, Type, TypeVar, Union
 
 import pytest
 from flask import jsonify
 from flask_pydantic import validate, ValidationError
-from flask_pydantic.core import convert_query_params, is_iterable_of_models
+from flask_pydantic.core import (
+    _ensure_model_kwarg,
+    _get_type_generic,
+    convert_query_params,
+    is_iterable_of_models,
+)
 from flask_pydantic.exceptions import (
     InvalidIterableOfModelsException,
     JsonBodyParsingError,
@@ -16,7 +21,7 @@ class ValidateParams(NamedTuple):
     body_model: Optional[Type[BaseModel]] = None
     query_model: Optional[Type[BaseModel]] = None
     form_model: Optional[Type[BaseModel]] = None
-    response_model: Type[BaseModel] = None
+    response_model: Optional[Type[BaseModel]] = None
     on_success_status: int = 200
     request_query: ImmutableMultiDict = ImmutableMultiDict({})
     request_body: Union[dict, List[dict]] = {}
@@ -47,7 +52,7 @@ class RequestBodyModel(BaseModel):
 
 class FormModel(BaseModel):
     f1: int
-    f2: str = None
+    f2: Optional[str] = None
 
 
 class RequestBodyModelRoot(BaseModel):
@@ -228,10 +233,11 @@ class TestValidate:
         mock_request.form = parameters.request_form
 
         def f(
-            body: parameters.body_model,
-            query: parameters.query_model,
-            form: parameters.form_model,
+            body: parameters.body_model,  # type: ignore
+            query: parameters.query_model,  # type: ignore
+            form: parameters.form_model,  # type: ignore
         ):
+            assert parameters.response_model is not None
             return parameters.response_model(
                 **body.dict(), **query.dict(), **form.dict()
             )
@@ -408,6 +414,7 @@ class TestValidate:
                 body = mock_request.body_params.dict()
             if mock_request.query_params:
                 query = mock_request.query_params.dict()
+            assert parameters.response_model is not None
             return parameters.response_model(**body, **query)
 
         response = validate(
@@ -567,3 +574,65 @@ def test_convert_query_params(query_params: ImmutableMultiDict, expected_result:
         d: Optional[List[int]]
 
     assert convert_query_params(query_params, Model) == expected_result
+
+
+def test_get_type_generic():
+    MyGeneric = TypeVar("MyGeneric", bound=str)
+    MyGenericType = Type[MyGeneric]
+
+    assert _get_type_generic(str) == str
+    assert _get_type_generic(MyGeneric) == str
+    assert _get_type_generic(MyGenericType) == str
+
+
+def test_ensure_model_kwarg():
+    class ParentModel(BaseModel):
+        pass
+
+    class ChildModel(ParentModel):
+        pass
+
+    def func_arg_hint_parent(body: ParentModel) -> str:
+        """Demonstrate less detailed hint in function type hint."""
+        return ""
+
+    assert _ensure_model_kwarg("body", ChildModel, func_arg_hint_parent) == (
+        ChildModel,
+        True,
+    ), "Function has less detailed model, so `from_validate` should be chosen over it."
+
+    def func_arg_hint_child(body: ChildModel) -> str:
+        """Demonstrate more detailed hint in function type hint."""
+        return ""
+
+    assert _ensure_model_kwarg("body", ParentModel, func_arg_hint_child) == (
+        ChildModel,
+        True,
+    ), "Function has more detailed model, so it should be chosen over `from_validate`."
+
+    def func_kwarg_hint_child(body: ChildModel = ChildModel()) -> str:
+        """Demonstrate function with kwarg instead of arg."""
+        return ""
+
+    assert _ensure_model_kwarg("body", ParentModel, func_kwarg_hint_child) == (
+        ChildModel,
+        True,
+    ), "Function has more detailed model, so it should be chosen over `from_validate`."
+
+    def func_arg_nohint(body) -> str:
+        """Demonstrate function with argument but without hint."""
+        return ""
+
+    assert _ensure_model_kwarg("body", ParentModel, func_arg_nohint) == (
+        ParentModel,
+        True,
+    ), "There is no type hint in function but the argument itself exists."
+
+    def func_noarg() -> str:
+        """Demonstrate function without the checked argument."""
+        return ""
+
+    assert _ensure_model_kwarg("body", ParentModel, func_noarg) == (
+        ParentModel,
+        False,
+    ), "Function doesn't have this argument but model is declared in `from_validate`."

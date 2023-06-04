@@ -49,6 +49,7 @@ setup(
     long_description=README,
     long_description_content_type="text/markdown",
     packages=["flask_pydantic"],
+    package_data={"flask_pydantic": ["py.typed"]},
     install_requires=list(get_install_requires()),
     python_requires=">=3.6",
     classifiers=[

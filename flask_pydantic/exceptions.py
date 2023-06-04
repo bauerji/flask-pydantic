@@ -1,4 +1,8 @@
-from typing import List, Optional
+from dataclasses import asdict, dataclass
+from typing import TYPE_CHECKING, Any, List, Optional
+
+if TYPE_CHECKING:
+    from pydantic.error_wrappers import ErrorDict
 
 
 class BaseFlaskPydanticException(Exception):
@@ -24,7 +28,7 @@ class ManyModelValidationError(BaseFlaskPydanticException):
     """This exception is raised if there is a failure during validation of many
     models in an iterable"""
 
-    def __init__(self, errors: List[dict], *args):
+    def __init__(self, errors: List["ErrorDict"], *args: Any):
         self._errors = errors
         super().__init__(*args)
 
@@ -32,19 +36,19 @@ class ManyModelValidationError(BaseFlaskPydanticException):
         return self._errors
 
 
+@dataclass
 class ValidationError(BaseFlaskPydanticException):
     """This exception is raised if there is a failure during validation if the
     user has configured an exception to be raised instead of a response"""
 
-    def __init__(
-        self,
-        body_params: Optional[List[dict]] = None,
-        form_params: Optional[List[dict]] = None,
-        path_params: Optional[List[dict]] = None,
-        query_params: Optional[List[dict]] = None,
-    ):
-        super().__init__()
-        self.body_params = body_params
-        self.form_params = form_params
-        self.path_params = path_params
-        self.query_params = query_params
+    body_params: Optional[List["ErrorDict"]] = None
+    form_params: Optional[List["ErrorDict"]] = None
+    path_params: Optional[List["ErrorDict"]] = None
+    query_params: Optional[List["ErrorDict"]] = None
+
+    def check(self) -> bool:
+        """Check if any param resulted in error."""
+        return any(value is not None for _, value in asdict(self).items())
+
+    def to_dict(self):
+        return {key: value for key, value in asdict(self).items() if value is not None}

@@ -1,12 +1,12 @@
-from typing import Type
+from typing import Dict, List, Type, Union
 
 from pydantic import BaseModel
-from werkzeug.datastructures import ImmutableMultiDict
+from werkzeug.datastructures import MultiDict
 
 
 def convert_query_params(
-    query_params: ImmutableMultiDict, model: Type[BaseModel]
-) -> dict:
+    query_params: "MultiDict[str, str]", model: Type[BaseModel]
+) -> Dict[str, Union[str, List[str]]]:
     """
     group query parameters into lists if model defines them
 

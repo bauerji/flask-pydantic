@@ -297,6 +297,44 @@ def my_route():
     return MyModel(...)
 ```
 
+### Generic model type
+
+It's possible to use a validator on a generic model type. It can be useful,
+e.g., when making a convenience API passthrough (example taken from
+[headscale-webui](https://github.com/iFargle/headscale-webui/blob/cc67cf0e9cf0b33fd66d766ce74d86e0c9cda114/server.py#L186)
+project):
+
+```python
+RequestT = TypeVar("RequestT", bound=Message)
+ResponseT = TypeVar("ResponseT", bound=Message)
+
+def api_passthrough(
+    route: str,
+    request_type: Type[RequestT],
+    api_method: Callable[[RequestT], ResponseT | str],
+):
+    def api_passthrough_page(body: RequestT) -> ResponseT | str:
+        return api_method(body)
+
+    api_passthrough_page.__name__ = route.replace("/", "_")
+    api_passthrough_page.__annotations__ = {"body": request_type}
+
+    return app.route(route, methods=["POST"])(
+        validate()(api_passthrough_page)
+    )
+
+api_passthrough(
+    "/api/endpoint1",
+    schema.GetMachineRequest,
+    backend_api_endpoint1,
+)
+api_passthrough(
+    "/api/endpoint2",
+    schema.DeleteMachineRequest,
+    backend_api_endpoint2,
+)
+```
+
 ### Example app
 
 For more complete examples see [example application](https://github.com/bauerji/flask_pydantic/tree/master/example_app).
