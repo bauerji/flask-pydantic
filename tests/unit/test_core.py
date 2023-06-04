@@ -1,9 +1,14 @@
-from typing import Any, List, NamedTuple, Optional, Type, Union
+from typing import Any, List, NamedTuple, Optional, Type, TypeVar, Union
 
 import pytest
 from flask import jsonify
 from flask_pydantic import validate, ValidationError
-from flask_pydantic.core import convert_query_params, is_iterable_of_models
+from flask_pydantic.core import (
+    _ensure_model_kwarg,
+    _get_type_generic,
+    convert_query_params,
+    is_iterable_of_models,
+)
 from flask_pydantic.exceptions import (
     InvalidIterableOfModelsException,
     JsonBodyParsingError,
@@ -569,3 +574,65 @@ def test_convert_query_params(query_params: ImmutableMultiDict, expected_result:
         d: Optional[List[int]]
 
     assert convert_query_params(query_params, Model) == expected_result
+
+
+def test_get_type_generic():
+    MyGeneric = TypeVar("MyGeneric", bound=str)
+    MyGenericType = Type[MyGeneric]
+
+    assert _get_type_generic(str) == str
+    assert _get_type_generic(MyGeneric) == str
+    assert _get_type_generic(MyGenericType) == str
+
+
+def test_ensure_model_kwarg():
+    class ParentModel(BaseModel):
+        pass
+
+    class ChildModel(ParentModel):
+        pass
+
+    def func_arg_hint_parent(body: ParentModel) -> str:
+        """Demonstrate less detailed hint in function type hint."""
+        return ""
+
+    assert _ensure_model_kwarg("body", ChildModel, func_arg_hint_parent) == (
+        ChildModel,
+        True,
+    ), "Function has less detailed model, so `from_validate` should be chosen over it."
+
+    def func_arg_hint_child(body: ChildModel) -> str:
+        """Demonstrate more detailed hint in function type hint."""
+        return ""
+
+    assert _ensure_model_kwarg("body", ParentModel, func_arg_hint_child) == (
+        ChildModel,
+        True,
+    ), "Function has more detailed model, so it should be chosen over `from_validate`."
+
+    def func_kwarg_hint_child(body: ChildModel = ChildModel()) -> str:
+        """Demonstrate function with kwarg instead of arg."""
+        return ""
+
+    assert _ensure_model_kwarg("body", ParentModel, func_kwarg_hint_child) == (
+        ChildModel,
+        True,
+    ), "Function has more detailed model, so it should be chosen over `from_validate`."
+
+    def func_arg_nohint(body) -> str:
+        """Demonstrate function with argument but without hint."""
+        return ""
+
+    assert _ensure_model_kwarg("body", ParentModel, func_arg_nohint) == (
+        ParentModel,
+        True,
+    ), "There is no type hint in function but the argument itself exists."
+
+    def func_noarg() -> str:
+        """Demonstrate function without the checked argument."""
+        return ""
+
+    assert _ensure_model_kwarg("body", ParentModel, func_noarg) == (
+        ParentModel,
+        False,
+    ), "Function doesn't have this argument but model is declared in `from_validate`."

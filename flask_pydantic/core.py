@@ -130,13 +130,27 @@ def get_body_dict(**params: Dict[str, Any]) -> Any:
 
 
 def _get_type_generic(hint: Any):
-    """Extract type information from bound TypeVar or Type[TypeVar]."""
+    """Extract type information from bound TypeVar or Type[TypeVar].
+
+    Examples:
+
+    ```
+    MyGeneric = TypeVar("MyGeneric", bound=str)
+    MyGenericType = Type[MyGeneric]
+
+    _get_type_generic(str) -> str
+    _get_type_generic(MyGeneric) -> str
+    _get_type_generic(MyGenericType) -> str
+    ```
+    """
+    # First check for direct TypeVar hint.
     if isinstance(hint, TypeVar):
         assert (
             getattr(hint, "__bound__", None) is not None
         ), "If using TypeVar, you need to specify bound model."
         return getattr(hint, "__bound__")
 
+    # Check for Type[TypeVar] hint.
     args = get_args(hint)
     if len(args) > 0 and isinstance(args[0], TypeVar):
         assert (
@@ -144,6 +158,7 @@ def _get_type_generic(hint: Any):
         ), "If using TypeVar, you need to specify bound model."
         return getattr(args[0], "__bound__")
 
+    # Otherwise, use the type hint directly.
     return hint
 
 
