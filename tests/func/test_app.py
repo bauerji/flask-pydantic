@@ -3,7 +3,7 @@ from typing import List, Optional
 import pytest
 from flask import jsonify, request
 from flask_pydantic import validate, ValidationError
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel, ConfigDict
 
 
 class ArrayModel(BaseModel):
@@ -91,8 +91,11 @@ def app_with_custom_root_type(app):
         name: str
         age: Optional[int]
 
-    class PersonBulk(BaseModel):
-        __root__: List[Person]
+    class PersonBulk(RootModel):
+        root: List[Person]
+
+        def __len__(self):
+            return len(self.root)
 
     @app.route("/root_type", methods=["POST"])
     @validate()
@@ -127,12 +130,10 @@ def app_with_camel_route(app):
         y: int
 
     class ResultModel(BaseModel):
+        model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
         result_of_addition: int
         result_of_multiplication: int
-
-        class Config:
-            alias_generator = to_camel
-            allow_population_by_field_name = True
 
     @app.route("/compute", methods=["GET"])
     @validate(response_by_alias=True)

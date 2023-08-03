@@ -8,7 +8,7 @@ from flask_pydantic.exceptions import (
     InvalidIterableOfModelsException,
     JsonBodyParsingError,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 from werkzeug.datastructures import ImmutableMultiDict
 
 
@@ -50,8 +50,8 @@ class FormModel(BaseModel):
     f2: str = None
 
 
-class RequestBodyModelRoot(BaseModel):
-    __root__: Union[str, RequestBodyModel]
+class RequestBodyModelRoot(RootModel):
+    root: Union[str, RequestBodyModel]
 
 
 validate_test_cases = [
@@ -191,11 +191,11 @@ class TestValidate:
             body = {}
             query = {}
             if mock_request.form_params:
-                body = mock_request.form_params.dict()
+                body = mock_request.form_params.model_dump()
             if mock_request.body_params:
-                body = mock_request.body_params.dict()
+                body = mock_request.body_params.model_dump()
             if mock_request.query_params:
-                query = mock_request.query_params.dict()
+                query = mock_request.query_params.model_dump()
             return parameters.response_model(**body, **query)
 
         response = validate(
@@ -212,11 +212,15 @@ class TestValidate:
         assert response.json == parameters.expected_response_body
         if 200 <= response.status_code < 300:
             assert (
-                mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
+                mock_request.body_params.model_dump(
+                    exclude_none=True, exclude_defaults=True
+                )
                 == parameters.request_body
             )
             assert (
-                mock_request.query_params.dict(exclude_none=True, exclude_defaults=True)
+                mock_request.query_params.model_dump(
+                    exclude_none=True, exclude_defaults=True
+                )
                 == parameters.request_query.to_dict()
             )
 
@@ -233,7 +237,7 @@ class TestValidate:
             form: parameters.form_model,
         ):
             return parameters.response_model(
-                **body.dict(), **query.dict(), **form.dict()
+                **body.model_dump(), **query.model_dump(), **form.model_dump()
             )
 
         response = validate(
@@ -247,11 +251,15 @@ class TestValidate:
         assert response.status_code == parameters.expected_status_code
         if 200 <= response.status_code < 300:
             assert (
-                mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
+                mock_request.body_params.model_dump(
+                    exclude_none=True, exclude_defaults=True
+                )
                 == parameters.request_body
             )
             assert (
-                mock_request.query_params.dict(exclude_none=True, exclude_defaults=True)
+                mock_request.query_params.model_dump(
+                    exclude_none=True, exclude_defaults=True
+                )
                 == parameters.request_query.to_dict()
             )
 
@@ -403,11 +411,11 @@ class TestValidate:
             body = {}
             query = {}
             if mock_request.form_params:
-                body = mock_request.form_params.dict()
+                body = mock_request.form_params.model_dump()
             if mock_request.body_params:
-                body = mock_request.body_params.dict()
+                body = mock_request.body_params.model_dump()
             if mock_request.query_params:
-                query = mock_request.query_params.dict()
+                query = mock_request.query_params.model_dump()
             return parameters.response_model(**body, **query)
 
         response = validate(
@@ -424,11 +432,15 @@ class TestValidate:
         assert response.json == parameters.expected_response_body
         if 200 <= response.status_code < 300:
             assert (
-                mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
+                mock_request.body_params.model_dump(
+                    exclude_none=True, exclude_defaults=True
+                )
                 == parameters.request_body
             )
             assert (
-                mock_request.query_params.dict(exclude_none=True, exclude_defaults=True)
+                mock_request.query_params.model_dump(
+                    exclude_none=True, exclude_defaults=True
+                )
                 == parameters.request_query.to_dict()
             )
 
