@@ -32,7 +32,7 @@ class ResponseModel(BaseModel):
     q1: int
     q2: str
     b1: float
-    b2: Optional[str]
+    b2: Optional[str] = None
 
 
 class QueryModel(BaseModel):
