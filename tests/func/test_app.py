@@ -153,11 +153,13 @@ test_cases = [
             "validation_error": {
                 "query_params": [
                     {
+                        "input": "limit",
                         "loc": ["limit"],
-                        "msg": "value is not a valid integer",
-                        "type": "type_error.integer",
+                        "msg": "Input should be a valid integer, unable to parse string as an integer",
+                        "type": "int_parsing",
+                        "url": "https://errors.pydantic.dev/2.1/v/int_parsing",
                     }
-                ]
+                ],
             }
         },
         id="invalid limit",
@@ -170,11 +172,13 @@ test_cases = [
             "validation_error": {
                 "body_params": [
                     {
+                        "input": {},
                         "loc": ["search_term"],
-                        "msg": "field required",
-                        "type": "value_error.missing",
+                        "msg": "Field required",
+                        "type": "missing",
+                        "url": "https://errors.pydantic.dev/2.1/v/missing",
                     }
-                ]
+                ],
             }
         },
         id="missing required body parameter",
@@ -210,9 +214,11 @@ form_test_cases = [
             "validation_error": {
                 "form_params": [
                     {
+                        "input": {},
                         "loc": ["search_term"],
-                        "msg": "field required",
-                        "type": "value_error.missing",
+                        "msg": "Field required",
+                        "type": "missing",
+                        "url": "https://errors.pydantic.dev/2.1/v/missing",
                     }
                 ]
             }
@@ -309,9 +315,11 @@ class TestArrayQueryParam:
             "validation_error": {
                 "query_params": [
                     {
+                        "input": {},
                         "loc": ["arr1"],
-                        "msg": "field required",
-                        "type": "value_error.missing",
+                        "msg": "Field required",
+                        "type": "missing",
+                        "url": "https://errors.pydantic.dev/2.1/v/missing",
                     }
                 ]
             }
@@ -357,9 +365,11 @@ class TestPathIntParameter:
             "validation_error": {
                 "path_params": [
                     {
+                        "input": "not_an_int",
                         "loc": ["obj_id"],
-                        "msg": "value is not a valid integer",
-                        "type": "type_error.integer",
+                        "msg": "Input should be a valid integer, unable to parse string as an integer",
+                        "type": "int_parsing",
+                        "url": "https://errors.pydantic.dev/2.1/v/int_parsing",
                     }
                 ]
             }
@@ -407,9 +417,11 @@ class TestGetJsonParams:
             "validation_error": {
                 "body_params": [
                     {
+                        "input": {},
                         "loc": ["param"],
-                        "msg": "field required",
-                        "type": "value_error.missing",
+                        "msg": "Field required",
+                        "type": "missing",
+                        "url": "https://errors.pydantic.dev/2.1/v/missing",
                     }
                 ]
             }
@@ -425,9 +437,11 @@ class TestCustomResponse:
         assert response.json["title"] == "validation error"
         assert response.json["body"] == [
             {
+                "input": {},
                 "loc": ["param"],
-                "msg": "field required",
-                "type": "value_error.missing",
+                "msg": "Field required",
+                "type": "missing",
+                "url": "https://errors.pydantic.dev/2.1/v/missing",
             }
         ]
         assert response.status_code == 422

@@ -89,9 +89,11 @@ validate_test_cases = [
                 "validation_error": {
                     "query_params": [
                         {
+                            "input": {},
                             "loc": ["q1"],
-                            "msg": "field required",
-                            "type": "value_error.missing",
+                            "msg": "Field required",
+                            "type": "missing",
+                            "url": "https://errors.pydantic.dev/2.1/v/missing",
                         }
                     ]
                 }
@@ -126,9 +128,11 @@ validate_test_cases = [
                 "validation_error": {
                     "body_params": [
                         {
+                            "input": {},
                             "loc": ["b1"],
-                            "msg": "field required",
-                            "type": "value_error.missing",
+                            "msg": "Field required",
+                            "type": "missing",
+                            "url": "https://errors.pydantic.dev/2.1/v/missing",
                         }
                     ]
                 }
@@ -144,9 +148,11 @@ validate_test_cases = [
                 "validation_error": {
                     "body_params": [
                         {
+                            "input": {},
                             "loc": ["b1"],
-                            "msg": "field required",
-                            "type": "value_error.missing",
+                            "msg": "Field required",
+                            "type": "missing",
+                            "url": "https://errors.pydantic.dev/2.1/v/missing",
                         }
                     ]
                 }
@@ -165,9 +171,11 @@ validate_test_cases = [
                 "validation_error": {
                     "form_params": [
                         {
+                            "input": {},
                             "loc": ["f1"],
-                            "msg": "field required",
-                            "type": "value_error.missing",
+                            "msg": "Field required",
+                            "type": "missing",
+                            "url": "https://errors.pydantic.dev/2.1/v/missing",
                         }
                     ]
                 }
@@ -368,14 +376,25 @@ class TestValidate:
         body_model = RequestBodyModelRoot
         response = validate(body_model)(lambda x: x)()
         assert response.status_code == 400
+
         assert response.json == {
             "validation_error": {
                 "body_params": [
                     {
-                        "loc": ["__root__"],
-                        "msg": "none is not an allowed value",
-                        "type": "type_error.none.not_allowed",
-                    }
+                        "input": None,
+                        "loc": ["str"],
+                        "msg": "Input should be a valid string",
+                        "type": "string_type",
+                        "url": "https://errors.pydantic.dev/2.1/v/string_type",
+                    },
+                    {
+                        "ctx": {"class_name": "RequestBodyModel"},
+                        "input": None,
+                        "loc": ["RequestBodyModel"],
+                        "msg": "Input should be a valid dictionary or instance of RequestBodyModel",
+                        "type": "model_type",
+                        "url": "https://errors.pydantic.dev/2.1/v/model_type",
+                    },
                 ]
             }
         }
@@ -453,14 +472,25 @@ class TestValidate:
         body_model = RequestBodyModelRoot
         response = validate(body_model)(lambda x: x)()
         assert response.status_code == 422
+
         assert response.json == {
             "validation_error": {
                 "body_params": [
                     {
-                        "loc": ["__root__"],
-                        "msg": "none is not an allowed value",
-                        "type": "type_error.none.not_allowed",
-                    }
+                        "input": None,
+                        "loc": ["str"],
+                        "msg": "Input should be a valid string",
+                        "type": "string_type",
+                        "url": "https://errors.pydantic.dev/2.1/v/string_type",
+                    },
+                    {
+                        "ctx": {"class_name": "RequestBodyModel"},
+                        "input": None,
+                        "loc": ["RequestBodyModel"],
+                        "msg": "Input should be a valid dictionary or instance of RequestBodyModel",
+                        "type": "model_type",
+                        "url": "https://errors.pydantic.dev/2.1/v/model_type",
+                    },
                 ]
             }
         }
@@ -476,10 +506,20 @@ class TestValidate:
             validate(body_model)(lambda x: x)()
         assert excinfo.value.body_params == [
             {
-                "loc": ("__root__",),
-                "msg": "none is not an allowed value",
-                "type": "type_error.none.not_allowed",
-            }
+                "input": None,
+                "loc": ("str",),
+                "msg": "Input should be a valid string",
+                "type": "string_type",
+                "url": "https://errors.pydantic.dev/2.1/v/string_type",
+            },
+            {
+                "ctx": {"class_name": "RequestBodyModel"},
+                "input": None,
+                "loc": ("RequestBodyModel",),
+                "msg": "Input should be a valid dictionary or instance of RequestBodyModel",
+                "type": "model_type",
+                "url": "https://errors.pydantic.dev/2.1/v/model_type",
+            },
         ]
 
     def test_query_fail_validation_raise_exception(self, app, request_ctx, mocker):
@@ -493,9 +533,11 @@ class TestValidate:
             validate(query=query_model)(lambda x: x)()
         assert excinfo.value.query_params == [
             {
+                "input": {},
                 "loc": ("q1",),
-                "msg": "field required",
-                "type": "value_error.missing",
+                "msg": "Field required",
+                "type": "missing",
+                "url": "https://errors.pydantic.dev/2.1/v/missing",
             }
         ]
 
@@ -510,9 +552,11 @@ class TestValidate:
             validate(form=form_model)(lambda x: x)()
         assert excinfo.value.form_params == [
             {
+                "input": {},
                 "loc": ("f1",),
-                "msg": "field required",
-                "type": "value_error.missing",
+                "msg": "Field required",
+                "type": "missing",
+                "url": "https://errors.pydantic.dev/2.1/v/missing",
             }
         ]
 
