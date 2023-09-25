@@ -60,7 +60,7 @@ def post():
 
 @app.route("/form", methods=["POST"])
 @validate(form=FormModel, query=QueryModel)
-def post2():
+def form_post():
     """
     Basic example with both query and form-data parameters, response object serialization.
     """
@@ -90,7 +90,7 @@ def post_kwargs(body: BodyModel, query: QueryModel):
 
 @app.route("/form/kwargs", methods=["POST"])
 @validate()
-def post_kwargs2(form: FormModel, query: QueryModel):
+def form_post_kwargs(form: FormModel, query: QueryModel):
     """
     Basic example with both query and form-data parameters, response object serialization.
     This time using the decorated function kwargs `form` and `query` type hinting

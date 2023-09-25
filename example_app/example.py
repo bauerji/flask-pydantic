@@ -92,7 +92,7 @@ curl --location --request POST 'http://127.0.0.1:5000/' \
 
 @app.route("/form", methods=["POST"])
 @validate()
-def post2(form: FormModel):
+def form_post(form: FormModel):
     name = form.name
     nickname = form.nickname
     return ResponseModel(name=name, nickname=nickname, id=0, age=1000)
