@@ -182,7 +182,7 @@ def validate(
             body_model = body_in_kwargs or body
             if body_model:
                 body_params = get_body_dict(**(get_json_params or {}))
-                if "__root__" in body_model.__fields__:
+                if "__root__" in body_model.model_fields:
                     try:
                         b = body_model(__root__=body_params).__root__
                     except ValidationError as ve:
