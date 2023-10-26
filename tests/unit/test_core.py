@@ -1,7 +1,7 @@
 from typing import Any, List, NamedTuple, Optional, Type, Union
 
 import pytest
-from flask import jsonify
+from flask import jsonify, Flask
 from flask_pydantic import validate, ValidationError
 from flask_pydantic.core import convert_query_params, is_iterable_of_models
 from flask_pydantic.exceptions import (
@@ -10,6 +10,7 @@ from flask_pydantic.exceptions import (
 )
 from pydantic import BaseModel, RootModel
 from werkzeug.datastructures import ImmutableMultiDict
+from unittest.mock import patch, MagicMock
 
 
 class ValidateParams(NamedTuple):
@@ -198,27 +199,27 @@ class TestValidate:
                 query = mock_request.query_params.dict()
             return parameters.response_model(**body, **query)
 
-        response = validate(
-            query=parameters.query_model,
-            body=parameters.body_model,
-            on_success_status=parameters.on_success_status,
-            exclude_none=parameters.exclude_none,
-            response_many=parameters.response_many,
-            request_body_many=parameters.request_body_many,
-            form=parameters.form_model,
-        )(f)()
+            response = validate(
+                query=parameters.query_model,
+                body=parameters.body_model,
+                on_success_status=parameters.on_success_status,
+                exclude_none=parameters.exclude_none,
+                response_many=parameters.response_many,
+                request_body_many=parameters.request_body_many,
+                form=parameters.form_model,
+            )(f)()
 
-        assert response.status_code == parameters.expected_status_code
-        assert response.json == parameters.expected_response_body
-        if 200 <= response.status_code < 300:
-            assert (
-                mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
-                == parameters.request_body
-            )
-            assert (
-                mock_request.query_params.dict(exclude_none=True, exclude_defaults=True)
-                == parameters.request_query.to_dict()
-            )
+            assert response.status_code == parameters.expected_status_code
+            assert response.json == parameters.expected_response_body
+            if 200 <= response.status_code < 300:
+                assert (
+                    mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
+                    == parameters.request_body
+                )
+                assert (
+                    mock_request.query_params.dict(exclude_none=True, exclude_defaults=True)
+                    == parameters.request_query.to_dict()
+                )
 
     @pytest.mark.parametrize("parameters", validate_test_cases)
     def test_validate_kwargs(self, mocker, request_ctx, parameters: ValidateParams):

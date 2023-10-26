@@ -5,6 +5,13 @@ from flask import Flask, request
 from flask_pydantic import validate
 from pydantic import BaseModel
 
+@pytest.fixture
+def request_ctx():
+    context_app = Flask(__name__)  # Ensure that you have a Flask application instance
+    with context_app.test_request_context() as ctx:
+        yield ctx
+
+
 
 @pytest.fixture
 def posts() -> List[dict]:
@@ -20,7 +27,7 @@ def posts() -> List[dict]:
 def query_model() -> Type[BaseModel]:
     class Query(BaseModel):
         limit: int = 2
-        min_views: Optional[int]
+        min_views: Optional[int] = None
 
     return Query
 
@@ -29,7 +36,7 @@ def query_model() -> Type[BaseModel]:
 def body_model() -> Type[BaseModel]:
     class Body(BaseModel):
         search_term: str
-        exclude: Optional[str]
+        exclude: Optional[str] = None
 
     return Body
 
@@ -38,7 +45,7 @@ def body_model() -> Type[BaseModel]:
 def form_model() -> Type[BaseModel]:
     class Form(BaseModel):
         search_term: str
-        exclude: Optional[str]
+        exclude: Optional[str] = None
 
     return Form
 
