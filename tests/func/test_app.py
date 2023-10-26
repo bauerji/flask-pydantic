@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 class ArrayModel(BaseModel):
     arr1: List[str]
-    arr2: Optional[List[int]]
+    arr2: Optional[List[int]] = None
 
 
 @pytest.fixture
@@ -89,7 +89,7 @@ def app_with_untyped_path_param_route(app):
 def app_with_custom_root_type(app):
     class Person(BaseModel):
         name: str
-        age: Optional[int]
+        age: Optional[int] = None
 
     class PersonBulk(BaseModel):
         __root__: List[Person]

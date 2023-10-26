@@ -32,7 +32,7 @@ class ResponseModel(BaseModel):
     q1: int
     q2: str
     b1: float
-    b2: Optional[str]
+    b2: Optional[str] = None
 
 
 class QueryModel(BaseModel):
@@ -563,7 +563,7 @@ def test_convert_query_params(query_params: ImmutableMultiDict, expected_result:
     class Model(BaseModel):
         a: int
         b: str
-        c: Optional[List[str]]
-        d: Optional[List[int]]
+        c: Optional[List[str]] = None
+        d: Optional[List[int]] = None
 
     assert convert_query_params(query_params, Model) == expected_result
