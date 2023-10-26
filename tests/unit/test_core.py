@@ -8,7 +8,7 @@ from flask_pydantic.exceptions import (
     InvalidIterableOfModelsException,
     JsonBodyParsingError,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 from werkzeug.datastructures import ImmutableMultiDict
 
 
@@ -51,7 +51,7 @@ class FormModel(BaseModel):
 
 
 class RequestBodyModelRoot(BaseModel):
-    __root__: Union[str, RequestBodyModel]
+    RootModel: Union[str, RequestBodyModel]
 
 
 validate_test_cases = [

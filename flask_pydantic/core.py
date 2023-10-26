@@ -28,9 +28,9 @@ def make_json_response(
 ) -> Response:
     """serializes model, creates JSON response with given status code"""
     if many:
-        js = f"[{', '.join([model.json(exclude_none=exclude_none, by_alias=by_alias) for model in content])}]"
+        js = f"[{', '.join([model.model_dump_json(exclude_none=exclude_none, by_alias=by_alias) for model in content])}]"
     else:
-        js = content.json(exclude_none=exclude_none, by_alias=by_alias)
+        js = content.model_dump_json(exclude_none=exclude_none, by_alias=by_alias)
     response = make_response(js, status_code)
     response.mimetype = "application/json"
     return response
@@ -86,7 +86,7 @@ def validate_path_params(func: Callable, kwargs: dict) -> Tuple[dict, list]:
 
 
 def get_body_dict(**params):
-    data = request.get_json(**params)
+    data = request.get_json(**params) #what does request.get_json
     if data is None and params.get("silent"):
         return {}
     return data
@@ -167,22 +167,22 @@ def validate(
         @wraps(func)
         def wrapper(*args, **kwargs):
             q, b, f, err = None, None, None, {}
-            kwargs, path_err = validate_path_params(func, kwargs)
+            kwargs, path_err = validate_path_params(func, kwargs) #check for the path part and throws error
             if path_err:
                 err["path_params"] = path_err
-            query_in_kwargs = func.__annotations__.get("query")
+            query_in_kwargs = func.__annotations__.get("query") #gets the type annotation for query could be of some pydantic crap
             query_model = query_in_kwargs or query
             if query_model:
                 query_params = convert_query_params(request.args, query_model)
                 try:
-                    q = query_model(**query_params)
+                    q = query_model(**query_params) # actual validation occurs, keys of the query string needs to be present in model
                 except ValidationError as ve:
                     err["query_params"] = ve.errors()
             body_in_kwargs = func.__annotations__.get("body")
-            body_model = body_in_kwargs or body
+            body_model = body_in_kwargs or body # i belive the body_model is of a pydantic model
             if body_model:
-                body_params = get_body_dict(**(get_json_params or {}))
-                if "__root__" in body_model.__fields__:
+                body_params = get_body_dict(**(get_json_params or {})) #gets the body as dictionary
+                if "__root__" in body_model.model_fields:
                     try:
                         b = body_model(__root__=body_params).__root__
                     except ValidationError as ve:
@@ -208,7 +208,7 @@ def validate(
             form_model = form_in_kwargs or form
             if form_model:
                 form_params = request.form
-                if "__root__" in form_model.__fields__:
+                if "__root__" in form_model.model_fields:
                     try:
                         f = form_model(__root__=form_params).__root__
                     except ValidationError as ve:
