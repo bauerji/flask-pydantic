@@ -167,24 +167,25 @@ def validate(
         @wraps(func)
         def wrapper(*args, **kwargs):
             q, b, f, err = None, None, None, {}
-            kwargs, path_err = validate_path_params(func, kwargs) #check for the path part and throws error
+            kwargs, path_err = validate_path_params(func, kwargs)
             if path_err:
                 err["path_params"] = path_err
-            query_in_kwargs = func.__annotations__.get("query") #gets the type annotation for query could be of some pydantic crap
+            query_in_kwargs = func.__annotations__.get("query")
             query_model = query_in_kwargs or query
             if query_model:
                 query_params = convert_query_params(request.args, query_model)
                 try:
-                    q = query_model(**query_params) # actual validation occurs, keys of the query string needs to be present in model
+                    q = query_model(**query_params)
                 except ValidationError as ve:
                     err["query_params"] = ve.errors()
             body_in_kwargs = func.__annotations__.get("body")
-            body_model = body_in_kwargs or body # i belive the body_model is of a pydantic model
+            body_model = body_in_kwargs or body
             if body_model:
-                body_params = get_body_dict(**(get_json_params or {})) #gets the body as dictionary
-                if "__root__" in body_model.model_fields:
+                body_params = get_body_dict(**(get_json_params or {}))
+                if "RootModel" in body_model.model_fields or 'root' in body_model.__annotations__:
                     try:
-                        b = body_model(__root__=body_params).__root__
+                        # Try to instantiate the model
+                        b = body_model(root=body_params).root
                     except ValidationError as ve:
                         err["body_params"] = ve.errors()
                 elif request_body_many:
@@ -208,9 +209,9 @@ def validate(
             form_model = form_in_kwargs or form
             if form_model:
                 form_params = request.form
-                if "__root__" in form_model.model_fields:
+                if 'root' in form_model.__annotations__:
                     try:
-                        f = form_model(__root__=form_params).__root__
+                        f = form_model(root=form_params).root
                     except ValidationError as ve:
                         err["form_params"] = ve.errors()
                 else:

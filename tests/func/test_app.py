@@ -91,8 +91,8 @@ def app_with_custom_root_type(app):
         name: str
         age: Optional[int] = None
 
-    class PersonBulk(BaseModel):
-        RootModel: List[Person]
+    class PersonBulk(RootModel[List[Person]]):
+        pass
 
     @app.route("/root_type", methods=["POST"])
     @validate()
@@ -132,7 +132,7 @@ def app_with_camel_route(app):
 
         class Config:
             alias_generator = to_camel
-            allow_population_by_field_name = True
+            populate_by_name = True
 
     @app.route("/compute", methods=["GET"])
     @validate(response_by_alias=True)
@@ -141,6 +141,24 @@ def app_with_camel_route(app):
             result_of_addition=query.x + query.y,
             result_of_multiplication=query.x * query.y,
         )
+
+
+def normalize_response(data):
+    """removes the 'url' in the response since this is subjective to change
+    e.g: 'url':'https://errors.pydantic.dev/2.2/v/missing
+    '"""
+    if isinstance(data, dict):
+        data.pop("url", None)  # Remove the 'url' key if it exists
+        for key, value in data.items():
+            normalize_response(
+                value
+            )  # Recursively call the function for nested dictionaries
+    elif isinstance(data, list):
+        for item in data:
+            normalize_response(
+                item
+            )  # Recursively call the function for items in a list
+    return data
 
 
 test_cases = [
@@ -152,9 +170,10 @@ test_cases = [
             "validation_error": {
                 "query_params": [
                     {
+                        "input": "limit",
                         "loc": ["limit"],
-                        "msg": "value is not a valid integer",
-                        "type": "type_error.integer",
+                        "msg": "Input should be a valid integer, unable to parse string as an integer",
+                        "type": "int_parsing",
                     }
                 ]
             }
@@ -169,9 +188,10 @@ test_cases = [
             "validation_error": {
                 "body_params": [
                     {
+                        "input": {},
                         "loc": ["search_term"],
-                        "msg": "field required",
-                        "type": "value_error.missing",
+                        "msg": "Field required",
+                        "type": "missing",
                     }
                 ]
             }
@@ -209,9 +229,10 @@ form_test_cases = [
             "validation_error": {
                 "form_params": [
                     {
+                        "input": {},
                         "loc": ["search_term"],
-                        "msg": "field required",
-                        "type": "value_error.missing",
+                        "msg": "Field required",
+                        "type": "missing",
                     }
                 ]
             }
@@ -245,26 +266,26 @@ class TestSimple:
     @pytest.mark.parametrize("query,body,expected_status,expected_response", test_cases)
     def test_post(self, client, query, body, expected_status, expected_response):
         response = client.post(f"/search{query}", json=body)
-        # assert response.json == expected_response
+        assert normalize_response(response.json) == expected_response
         assert response.status_code == expected_status
 
     @pytest.mark.parametrize("query,body,expected_status,expected_response", test_cases)
     def test_post_kwargs(self, client, query, body, expected_status, expected_response):
         response = client.post(f"/search/kwargs{query}", json=body)
-        assert response.json == expected_response
+        assert normalize_response(response.json) == expected_response
         assert response.status_code == expected_status
 
     @pytest.mark.parametrize(
         "query,form,expected_status,expected_response", form_test_cases
     )
     def test_post_kwargs_form(
-            self, client, query, form, expected_status, expected_response
+        self, client, query, form, expected_status, expected_response
     ):
         response = client.post(
             f"/search/form/kwargs{query}",
             data=form,
         )
-        assert response.json == expected_response
+        assert normalize_response(response.json) == expected_response
         assert response.status_code == expected_status
 
     def test_error_status_code(self, app, mocker, client):
@@ -304,13 +325,14 @@ def test_custom_headers(client):
 class TestArrayQueryParam:
     def test_no_param_raises(self, client):
         response = client.get("/arr")
-        assert response.json == {
+        assert normalize_response(response.json) == {
             "validation_error": {
                 "query_params": [
                     {
+                        "input": {},
                         "loc": ["arr1"],
-                        "msg": "field required",
-                        "type": "value_error.missing",
+                        "msg": "Field required",
+                        "type": "missing",
                     }
                 ]
             }
@@ -356,16 +378,17 @@ class TestPathIntParameter:
             "validation_error": {
                 "path_params": [
                     {
+                        "input": "not_an_int",
                         "loc": ["obj_id"],
-                        "msg": "value is not a valid integer",
-                        "type": "type_error.integer",
+                        "msg": "Input should be a valid integer, unable to parse string as an integer",
+                        "type": "int_parsing",
                     }
                 ]
             }
         }
         response = client.get("/path_param/not_an_int/")
 
-        assert response.json == expected_response
+        assert normalize_response(response.json) == expected_response
         assert response.status_code == 400
 
 
@@ -395,20 +418,21 @@ class TestGetJsonParams:
 
         assert response.status_code == 400
         assert (
-                "failed to decode json object: expecting value: line 1 column 1 (char 0)"
-                in response.text.lower()
+            "failed to decode json object: expecting value: line 1 column 1 (char 0)"
+            in response.text.lower()
         )
 
     def test_silent(self, client):
         response = client.post("/silent", headers={"Content-Type": "application/json"})
 
-        assert response.json == {
+        assert normalize_response(response.json) == {
             "validation_error": {
                 "body_params": [
                     {
+                        "input": {},
                         "loc": ["param"],
-                        "msg": "field required",
-                        "type": "value_error.missing",
+                        "msg": "Field required",
+                        "type": "missing",
                     }
                 ]
             }
@@ -422,11 +446,12 @@ class TestCustomResponse:
         response = client.post("/silent", headers={"Content-Type": "application/json"})
 
         assert response.json["title"] == "validation error"
-        assert response.json["body"] == [
+        assert normalize_response(response.json["body"]) == [
             {
+                "input": {},
                 "loc": ["param"],
-                "msg": "field required",
-                "type": "value_error.missing",
+                "msg": "Field required",
+                "type": "missing",
             }
         ]
         assert response.status_code == 422

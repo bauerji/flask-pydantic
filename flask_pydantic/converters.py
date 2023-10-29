@@ -1,4 +1,4 @@
-from typing import Type, List, Optional, Union, TypeVar
+from typing import Type, TypeVar
 
 from pydantic import BaseModel
 from werkzeug.datastructures import ImmutableMultiDict

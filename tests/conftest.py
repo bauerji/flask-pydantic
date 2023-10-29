@@ -5,12 +5,11 @@ from flask import Flask, request
 from flask_pydantic import validate
 from pydantic import BaseModel
 
-@pytest.fixture
-def request_ctx():
-    context_app = Flask(__name__)  # Ensure that you have a Flask application instance
-    with context_app.test_request_context() as ctx:
-        yield ctx
 
+@pytest.fixture
+def request_ctx(app):
+    with app.test_request_context() as ctx:
+        yield ctx
 
 
 @pytest.fixture

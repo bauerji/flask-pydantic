@@ -1,16 +1,15 @@
 from typing import Any, List, NamedTuple, Optional, Type, Union
 
 import pytest
-from flask import jsonify, Flask
+from flask import jsonify
 from flask_pydantic import validate, ValidationError
 from flask_pydantic.core import convert_query_params, is_iterable_of_models
 from flask_pydantic.exceptions import (
     InvalidIterableOfModelsException,
     JsonBodyParsingError,
 )
-from pydantic import BaseModel, RootModel
+from pydantic import BaseModel
 from werkzeug.datastructures import ImmutableMultiDict
-from unittest.mock import patch, MagicMock
 
 
 class ValidateParams(NamedTuple):
@@ -55,6 +54,24 @@ class RequestBodyModelRoot(BaseModel):
     RootModel: Union[str, RequestBodyModel]
 
 
+def normalize_response(data):
+    """removes the 'url' in the response since this is subjective to change
+    e.g: 'url':'https://errors.pydantic.dev/2.2/v/missing
+    '"""
+    if isinstance(data, dict):
+        data.pop("url", None)  # Remove the 'url' key if it exists
+        for key, value in data.items():
+            normalize_response(
+                value
+            )  # Recursively call the function for nested dictionaries
+    elif isinstance(data, list):
+        for item in data:
+            normalize_response(
+                item
+            )  # Recursively call the function for items in a list
+    return data
+
+
 validate_test_cases = [
     pytest.param(
         ValidateParams(
@@ -90,9 +107,11 @@ validate_test_cases = [
                 "validation_error": {
                     "query_params": [
                         {
+                            "input": {},
                             "loc": ["q1"],
-                            "msg": "field required",
-                            "type": "value_error.missing",
+                            "msg": "Field required",
+                            "type": "missing",
+                            #'url': 'https://errors.pydantic.dev/2.2/v/missing'
                         }
                     ]
                 }
@@ -127,9 +146,11 @@ validate_test_cases = [
                 "validation_error": {
                     "body_params": [
                         {
+                            "input": {},
                             "loc": ["b1"],
-                            "msg": "field required",
-                            "type": "value_error.missing",
+                            "msg": "Field required",
+                            "type": "missing",
+                            #'url': 'https://errors.pydantic.dev/2.2/v/missing'
                         }
                     ]
                 }
@@ -145,9 +166,11 @@ validate_test_cases = [
                 "validation_error": {
                     "body_params": [
                         {
+                            "input": {},
                             "loc": ["b1"],
-                            "msg": "field required",
-                            "type": "value_error.missing",
+                            "msg": "Field required",
+                            "type": "missing",
+                            #'url': 'https://errors.pydantic.dev/2.2/v/missing'
                         }
                     ]
                 }
@@ -166,9 +189,11 @@ validate_test_cases = [
                 "validation_error": {
                     "form_params": [
                         {
+                            "input": {},
                             "loc": ["f1"],
-                            "msg": "field required",
-                            "type": "value_error.missing",
+                            "msg": "Field required",
+                            "type": "missing",
+                            #'url': 'https://errors.pydantic.dev/2.2/v/missing'
                         }
                     ]
                 }
@@ -210,14 +235,20 @@ class TestValidate:
             )(f)()
 
             assert response.status_code == parameters.expected_status_code
-            assert response.json == parameters.expected_response_body
+            assert (
+                normalize_response(response.json) == parameters.expected_response_body
+            )
             if 200 <= response.status_code < 300:
                 assert (
-                    mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
+                    mock_request.body_params.dict(
+                        exclude_none=True, exclude_defaults=True
+                    )
                     == parameters.request_body
                 )
                 assert (
-                    mock_request.query_params.dict(exclude_none=True, exclude_defaults=True)
+                    mock_request.query_params.dict(
+                        exclude_none=True, exclude_defaults=True
+                    )
                     == parameters.request_query.to_dict()
                 )
 
@@ -244,7 +275,7 @@ class TestValidate:
             request_body_many=parameters.request_body_many,
         )(f)()
 
-        assert response.json == parameters.expected_response_body
+        assert normalize_response(response.json) == parameters.expected_response_body
         assert response.status_code == parameters.expected_status_code
         if 200 <= response.status_code < 300:
             assert (
@@ -361,13 +392,15 @@ class TestValidate:
         body_model = RequestBodyModelRoot
         response = validate(body_model)(lambda x: x)()
         assert response.status_code == 400
-        assert response.json == {
+        assert normalize_response(response.json) == {
             "validation_error": {
                 "body_params": [
                     {
-                        "loc": ["__root__"],
-                        "msg": "none is not an allowed value",
-                        "type": "type_error.none.not_allowed",
+                        "input": {"root": None},
+                        "loc": ["RootModel"],
+                        "msg": "Field required",
+                        "type": "missing",
+                        # 'url': 'https://errors.pydantic.dev/2.2/v/missing' this is subjective to change
                     }
                 ]
             }
@@ -422,7 +455,7 @@ class TestValidate:
         )(f)()
 
         assert response.status_code == parameters.expected_status_code
-        assert response.json == parameters.expected_response_body
+        assert normalize_response(response.json) == parameters.expected_response_body
         if 200 <= response.status_code < 300:
             assert (
                 mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
@@ -442,13 +475,14 @@ class TestValidate:
         body_model = RequestBodyModelRoot
         response = validate(body_model)(lambda x: x)()
         assert response.status_code == 422
-        assert response.json == {
+        assert normalize_response(response.json) == {
             "validation_error": {
                 "body_params": [
                     {
-                        "loc": ["__root__"],
-                        "msg": "none is not an allowed value",
-                        "type": "type_error.none.not_allowed",
+                        "input": {"root": None},
+                        "loc": ["RootModel"],
+                        "msg": "Field required",
+                        "type": "missing",
                     }
                 ]
             }
@@ -463,11 +497,12 @@ class TestValidate:
         body_model = RequestBodyModelRoot
         with pytest.raises(ValidationError) as excinfo:
             validate(body_model)(lambda x: x)()
-        assert excinfo.value.body_params == [
+        assert normalize_response(excinfo.value.body_params) == [
             {
-                "loc": ("__root__",),
-                "msg": "none is not an allowed value",
-                "type": "type_error.none.not_allowed",
+                "input": {"root": None},
+                "loc": ("RootModel",),
+                "msg": "Field required",
+                "type": "missing",
             }
         ]
 
@@ -480,11 +515,12 @@ class TestValidate:
         query_model = QueryModel
         with pytest.raises(ValidationError) as excinfo:
             validate(query=query_model)(lambda x: x)()
-        assert excinfo.value.query_params == [
+        assert normalize_response(excinfo.value.query_params) == [
             {
+                "input": {},
                 "loc": ("q1",),
-                "msg": "field required",
-                "type": "value_error.missing",
+                "msg": "Field required",
+                "type": "missing",
             }
         ]
 
@@ -497,11 +533,12 @@ class TestValidate:
         form_model = FormModel
         with pytest.raises(ValidationError) as excinfo:
             validate(form=form_model)(lambda x: x)()
-        assert excinfo.value.form_params == [
+        assert normalize_response(excinfo.value.form_params) == [
             {
+                "input": {},
                 "loc": ("f1",),
-                "msg": "field required",
-                "type": "value_error.missing",
+                "msg": "Field required",
+                "type": "missing",
             }
         ]
 
