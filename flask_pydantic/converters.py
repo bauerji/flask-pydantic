@@ -6,11 +6,9 @@ from werkzeug.datastructures import ImmutableMultiDict
 T = TypeVar('T')
 def is_list_or_optional_list(field_type: Type[T]) -> bool:
     """Check if the field type is List or Optional[List]."""
-    # Check if the field is a List
     if getattr(field_type, '_name', None) == 'List':
         return True
-
-    # Check if the field is an Optional[List]
+        
     if hasattr(field_type, '__args__'):
         return any(getattr(arg, '_name', None) == 'List' for arg in field_type.__args__)
 
