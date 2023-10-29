@@ -1,3 +1,2 @@
 Flask
 pydantic>=1.7
-pydantic-settings

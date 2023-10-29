@@ -26,19 +26,19 @@ class IndexParam(BaseModel):
 
 class BodyModel(BaseModel):
     name: str
-    nickname: Optional[str]
+    nickname: Optional[str] = None
 
 
 class FormModel(BaseModel):
     name: str
-    nickname: Optional[str]
+    nickname: Optional[str] = None
 
 
 class ResponseModel(BaseModel):
     id: int
     age: int
     name: str
-    nickname: Optional[str]
+    nickname: Optional[str] = None
 
 
 @app.route("/", methods=["POST"])

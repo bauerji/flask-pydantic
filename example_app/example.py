@@ -9,7 +9,7 @@ app = Flask("flask_pydantic_app")
 
 class RequestBodyModel(BaseModel):
     name: str
-    nickname: Optional[str]
+    nickname: Optional[str] = None
 
 
 class QueryModel(BaseModel):
@@ -18,7 +18,7 @@ class QueryModel(BaseModel):
 
 class FormModel(BaseModel):
     name: str
-    nickname: Optional[str]
+    nickname: Optional[str] = None
 
 
 @app.route("/", methods=["GET"])
@@ -41,7 +41,7 @@ class ResponseModel(BaseModel):
     id: int
     age: int
     name: str
-    nickname: Optional[str]
+    nickname: Optional[str] = None
 
 
 @app.route("/character/<character_id>/", methods=["GET"])
