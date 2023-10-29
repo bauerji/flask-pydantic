@@ -86,7 +86,7 @@ def validate_path_params(func: Callable, kwargs: dict) -> Tuple[dict, list]:
 
 
 def get_body_dict(**params):
-    data = request.get_json(**params) #what does request.get_json
+    data = request.get_json(**params)
     if data is None and params.get("silent"):
         return {}
     return data
@@ -184,7 +184,6 @@ def validate(
                 body_params = get_body_dict(**(get_json_params or {}))
                 if "RootModel" in body_model.model_fields or 'root' in body_model.__annotations__:
                     try:
-                        # Try to instantiate the model
                         b = body_model(root=body_params).root
                     except ValidationError as ve:
                         err["body_params"] = ve.errors()
