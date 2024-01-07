@@ -1,3 +1,5 @@
+from ..util import assert_matches
+import re
 from typing import List, Optional
 
 import pytest
@@ -157,7 +159,9 @@ test_cases = [
                         "loc": ["limit"],
                         "msg": "Input should be a valid integer, unable to parse string as an integer",
                         "type": "int_parsing",
-                        "url": "https://errors.pydantic.dev/2.1/v/int_parsing",
+                        "url": re.compile(
+                            r"https://errors\.pydantic\.dev/.*/v/int_parsing"
+                        ),
                     }
                 ],
             }
@@ -176,7 +180,9 @@ test_cases = [
                         "loc": ["search_term"],
                         "msg": "Field required",
                         "type": "missing",
-                        "url": "https://errors.pydantic.dev/2.1/v/missing",
+                        "url": re.compile(
+                            r"https://errors\.pydantic\.dev/.*/v/missing"
+                        ),
                     }
                 ],
             }
@@ -218,7 +224,9 @@ form_test_cases = [
                         "loc": ["search_term"],
                         "msg": "Field required",
                         "type": "missing",
-                        "url": "https://errors.pydantic.dev/2.1/v/missing",
+                        "url": re.compile(
+                            r"https://errors\.pydantic\.dev/.*/v/missing"
+                        ),
                     }
                 ]
             }
@@ -252,13 +260,13 @@ class TestSimple:
     @pytest.mark.parametrize("query,body,expected_status,expected_response", test_cases)
     def test_post(self, client, query, body, expected_status, expected_response):
         response = client.post(f"/search{query}", json=body)
-        assert response.json == expected_response
+        assert_matches(expected_response, response.json)
         assert response.status_code == expected_status
 
     @pytest.mark.parametrize("query,body,expected_status,expected_response", test_cases)
     def test_post_kwargs(self, client, query, body, expected_status, expected_response):
         response = client.post(f"/search/kwargs{query}", json=body)
-        assert response.json == expected_response
+        assert_matches(expected_response, response.json)
         assert response.status_code == expected_status
 
     @pytest.mark.parametrize(
@@ -271,7 +279,7 @@ class TestSimple:
             f"/search/form/kwargs{query}",
             data=form,
         )
-        assert response.json == expected_response
+        assert_matches(expected_response, response.json)
         assert response.status_code == expected_status
 
     def test_error_status_code(self, app, mocker, client):
@@ -311,19 +319,24 @@ def test_custom_headers(client):
 class TestArrayQueryParam:
     def test_no_param_raises(self, client):
         response = client.get("/arr")
-        assert response.json == {
-            "validation_error": {
-                "query_params": [
-                    {
-                        "input": {},
-                        "loc": ["arr1"],
-                        "msg": "Field required",
-                        "type": "missing",
-                        "url": "https://errors.pydantic.dev/2.1/v/missing",
-                    }
-                ]
-            }
-        }
+        assert_matches(
+            {
+                "validation_error": {
+                    "query_params": [
+                        {
+                            "input": {},
+                            "loc": ["arr1"],
+                            "msg": "Field required",
+                            "type": "missing",
+                            "url": re.compile(
+                                r"https://errors\.pydantic\.dev/.*/v/missing"
+                            ),
+                        }
+                    ]
+                }
+            },
+            response.json,
+        )
 
     def test_correctly_returns_first_arr(self, client):
         response = client.get("/arr?arr1=first&arr1=second")
@@ -349,7 +362,7 @@ aliases_test_cases = [
 @pytest.mark.parametrize("x,y,expected_result", aliases_test_cases)
 def test_aliases(x, y, expected_result, client):
     response = client.get(f"/compute?x={x}&y={y}")
-    assert response.json == expected_result
+    assert_matches(expected_result, response.json)
 
 
 @pytest.mark.usefixtures("app_with_int_path_param_route")
@@ -358,7 +371,7 @@ class TestPathIntParameter:
         id_ = 12
         expected_response = {"id": id_}
         response = client.get(f"/path_param/{id_}/")
-        assert response.json == expected_response
+        assert_matches(expected_response, response.json)
 
     def test_string_parameter(self, client):
         expected_response = {
@@ -369,14 +382,16 @@ class TestPathIntParameter:
                         "loc": ["obj_id"],
                         "msg": "Input should be a valid integer, unable to parse string as an integer",
                         "type": "int_parsing",
-                        "url": "https://errors.pydantic.dev/2.1/v/int_parsing",
+                        "url": re.compile(
+                            r"https://errors\.pydantic\.dev/.*/v/int_parsing"
+                        ),
                     }
                 ]
             }
         }
         response = client.get("/path_param/not_an_int/")
 
-        assert response.json == expected_response
+        assert_matches(expected_response, response.json)
         assert response.status_code == 400
 
 
@@ -387,14 +402,14 @@ class TestPathUnannotatedParameter:
         expected_response = {"id": str(id_)}
         response = client.get(f"/path_param/{id_}/")
 
-        assert response.json == expected_response
+        assert_matches(expected_response, response.json)
 
     def test_str_param_passes(self, client):
         id_ = "twelve"
         expected_response = {"id": id_}
         response = client.get(f"/path_param/{id_}/")
 
-        assert response.json == expected_response
+        assert_matches(expected_response, response.json)
 
 
 @pytest.mark.usefixtures("app_with_optional_body")
@@ -413,19 +428,24 @@ class TestGetJsonParams:
     def test_silent(self, client):
         response = client.post("/silent", headers={"Content-Type": "application/json"})
 
-        assert response.json == {
-            "validation_error": {
-                "body_params": [
-                    {
-                        "input": {},
-                        "loc": ["param"],
-                        "msg": "Field required",
-                        "type": "missing",
-                        "url": "https://errors.pydantic.dev/2.1/v/missing",
-                    }
-                ]
-            }
-        }
+        assert_matches(
+            {
+                "validation_error": {
+                    "body_params": [
+                        {
+                            "input": {},
+                            "loc": ["param"],
+                            "msg": "Field required",
+                            "type": "missing",
+                            "url": re.compile(
+                                r"https://errors\.pydantic\.dev/.*/v/missing"
+                            ),
+                        }
+                    ]
+                }
+            },
+            response.json,
+        )
         assert response.status_code == 400
 
 
@@ -435,13 +455,16 @@ class TestCustomResponse:
         response = client.post("/silent", headers={"Content-Type": "application/json"})
 
         assert response.json["title"] == "validation error"
-        assert response.json["body"] == [
-            {
-                "input": {},
-                "loc": ["param"],
-                "msg": "Field required",
-                "type": "missing",
-                "url": "https://errors.pydantic.dev/2.1/v/missing",
-            }
-        ]
+        assert_matches(
+            [
+                {
+                    "input": {},
+                    "loc": ["param"],
+                    "msg": "Field required",
+                    "type": "missing",
+                    "url": re.compile(r"https://errors\.pydantic\.dev/.*/v/missing"),
+                }
+            ],
+            response.json["body"],
+        )
         assert response.status_code == 422
