@@ -62,6 +62,12 @@ def response_model(post_model: BaseModel) -> Type[BaseModel]:
     return Response
 
 
+@pytest.fixture
+def request_ctx(app):
+    with app.test_request_context() as ctx:
+        yield ctx
+
+
 def is_excluded(post: dict, exclude: Optional[str] = None) -> bool:
     if exclude is None:
         return False
