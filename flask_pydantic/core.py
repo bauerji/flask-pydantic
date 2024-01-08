@@ -2,8 +2,7 @@ from functools import wraps
 from typing import Any, Callable, Iterable, List, Optional, Tuple, Type, Union
 
 from flask import Response, current_app, jsonify, make_response, request
-from pydantic import BaseModel, ValidationError
-from pydantic.tools import parse_obj_as
+from pydantic import BaseModel, ValidationError, TypeAdapter, RootModel
 
 from .converters import convert_query_params
 from .exceptions import (
@@ -28,9 +27,9 @@ def make_json_response(
 ) -> Response:
     """serializes model, creates JSON response with given status code"""
     if many:
-        js = f"[{', '.join([model.json(exclude_none=exclude_none, by_alias=by_alias) for model in content])}]"
+        js = f"[{', '.join([model.model_dump_json(exclude_none=exclude_none, by_alias=by_alias) for model in content])}]"
     else:
-        js = content.json(exclude_none=exclude_none, by_alias=by_alias)
+        js = content.model_dump_json(exclude_none=exclude_none, by_alias=by_alias)
     response = make_response(js, status_code)
     response.mimetype = "application/json"
     return response
@@ -75,8 +74,8 @@ def validate_path_params(func: Callable, kwargs: dict) -> Tuple[dict, list]:
         if name in {"query", "body", "form", "return"}:
             continue
         try:
-            value = parse_obj_as(type_, kwargs.get(name))
-            validated[name] = value
+            adapter = TypeAdapter(type_)
+            validated[name] = adapter.validate_python(kwargs.get(name))
         except ValidationError as e:
             err = e.errors()[0]
             err["loc"] = [name]
@@ -182,9 +181,9 @@ def validate(
             body_model = body_in_kwargs or body
             if body_model:
                 body_params = get_body_dict(**(get_json_params or {}))
-                if "__root__" in body_model.__fields__:
+                if issubclass(body_model, RootModel):
                     try:
-                        b = body_model(__root__=body_params).__root__
+                        b = body_model(body_params)
                     except ValidationError as ve:
                         err["body_params"] = ve.errors()
                 elif request_body_many:
@@ -208,9 +207,9 @@ def validate(
             form_model = form_in_kwargs or form
             if form_model:
                 form_params = request.form
-                if "__root__" in form_model.__fields__:
+                if issubclass(form_model, RootModel):
                     try:
-                        f = form_model(__root__=form_params).__root__
+                        f = form_model(form_params)
                     except ValidationError as ve:
                         err["form_params"] = ve.errors()
                 else:
@@ -245,8 +244,7 @@ def validate(
                         "FLASK_PYDANTIC_VALIDATION_ERROR_STATUS_CODE", 400
                     )
                     return make_response(
-                        jsonify({"validation_error": err}),
-                        status_code
+                        jsonify({"validation_error": err}), status_code
                     )
             res = func(*args, **kwargs)
 

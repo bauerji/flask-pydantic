@@ -75,7 +75,7 @@ class ResponseModel(BaseModel):
   id: int
   age: int
   name: str
-  nickname: Optional[str]
+  nickname: Optional[str] = None
 
 # Example 1: query parameters only
 @app.route("/", methods=["GET"])
@@ -155,7 +155,7 @@ def get_character(character_id: int):
 ```python
 class RequestBodyModel(BaseModel):
   name: str
-  nickname: Optional[str]
+  nickname: Optional[str] = None
 
 # Example2: request body only
 @app.route("/", methods=["POST"])
@@ -198,7 +198,7 @@ def get_and_post(body: RequestBodyModel,query: QueryModel):
 ```python
 class RequestFormDataModel(BaseModel):
   name: str
-  nickname: Optional[str]
+  nickname: Optional[str] = None
 
 # Example2: request body only
 @app.route("/", methods=["POST"])
@@ -282,9 +282,10 @@ def modify_key(text: str) -> str:
 
 class MyModel(BaseModel):
     ...
-    class Config:
-        alias_generator = modify_key
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        alias_generator=modify_key,
+        populate_by_name=True
+    )
 
 ```
 

@@ -9,7 +9,7 @@ app = Flask("flask_pydantic_app")
 
 class RequestBodyModel(BaseModel):
     name: str
-    nickname: Optional[str]
+    nickname: Optional[str] = None
 
 
 class QueryModel(BaseModel):
@@ -18,7 +18,7 @@ class QueryModel(BaseModel):
 
 class FormModel(BaseModel):
     name: str
-    nickname: Optional[str]
+    nickname: Optional[str] = None
 
 
 @app.route("/", methods=["GET"])
@@ -41,7 +41,7 @@ class ResponseModel(BaseModel):
     id: int
     age: int
     name: str
-    nickname: Optional[str]
+    nickname: Optional[str] = None
 
 
 @app.route("/character/<character_id>/", methods=["GET"])
@@ -92,7 +92,7 @@ curl --location --request POST 'http://127.0.0.1:5000/' \
 
 @app.route("/form", methods=["POST"])
 @validate()
-def post(form: FormModel):
+def form_post(form: FormModel):
     name = form.name
     nickname = form.nickname
     return ResponseModel(name=name, nickname=nickname, id=0, age=1000)
