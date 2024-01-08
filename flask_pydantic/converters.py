@@ -4,15 +4,17 @@ from pydantic import BaseModel
 from werkzeug.datastructures import ImmutableMultiDict
 
 T = TypeVar('T')
+
+
 def is_list_or_optional_list(field_type: Type[T]) -> bool:
     """Check if the field type is List or Optional[List]."""
     if getattr(field_type, '_name', None) == 'List':
         return True
-        
     if hasattr(field_type, '__args__'):
         return any(getattr(arg, '_name', None) == 'List' for arg in field_type.__args__)
 
     return False
+
 
 def convert_query_params(
     query_params: ImmutableMultiDict, model: Type[BaseModel]
@@ -24,7 +26,7 @@ def convert_query_params(
     :param model: query parameter's model
     :return: resulting parameters
     """
-    return{
+    return {
         **query_params.to_dict(),
         **{
             key: value
