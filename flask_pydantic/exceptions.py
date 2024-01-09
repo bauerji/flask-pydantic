@@ -48,3 +48,31 @@ class ValidationError(BaseFlaskPydanticException):
         self.form_params = form_params
         self.path_params = path_params
         self.query_params = query_params
+
+        # Combine the previous types or errors in the same array,
+        # so the errors can be used like with the original Pydantic library
+        self.errors: List[dict] = []
+        if body_params:
+            for param in body_params:
+                new_param = param.copy()
+                new_param["loc"] = list(param["loc"])
+                new_param["loc"].insert(0, "body")
+                self.errors.append(new_param)
+        if form_params:
+            for param in form_params:
+                new_param = param.copy()
+                new_param["loc"] = list(param["loc"])
+                new_param["loc"].insert(0, "form")
+                self.errors.append(new_param)
+        if path_params:
+            for param in path_params:
+                new_param = param.copy()
+                new_param["loc"] = list(param["loc"])
+                new_param["loc"].insert(0, "path")
+                self.errors.append(new_param)
+        if query_params:
+            for param in query_params:
+                new_param = param.copy()
+                new_param["loc"] = list(param["loc"])
+                new_param["loc"].insert(0, "query")
+                self.errors.append(new_param)
