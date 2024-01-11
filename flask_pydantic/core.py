@@ -243,6 +243,9 @@ def validate(
                     status_code = current_app.config.get(
                         "FLASK_PYDANTIC_VALIDATION_ERROR_STATUS_CODE", 400
                     )
+                    for idx, body_param in enumerate(err.get("body_params")):
+                        if "ctx" in body_param:
+                            del err["body_params"][idx]["ctx"]
                     return make_response(
                         jsonify({"validation_error": err}), status_code
                     )
