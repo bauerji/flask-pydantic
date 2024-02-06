@@ -91,6 +91,12 @@ def get_body_dict(**params):
     return data
 
 
+def del_ctx_if_exists(params: list):
+    for idx, param in enumerate(params):
+        if "ctx" in param and "error" in param["ctx"]:
+            del params[idx]["ctx"]
+
+
 def validate(
     body: Optional[Type[BaseModel]] = None,
     query: Optional[Type[BaseModel]] = None,
@@ -243,9 +249,12 @@ def validate(
                     status_code = current_app.config.get(
                         "FLASK_PYDANTIC_VALIDATION_ERROR_STATUS_CODE", 400
                     )
-                    for idx, body_param in enumerate(err.get("body_params")):
-                        if "ctx" in body_param:
-                            del err["body_params"][idx]["ctx"]
+                    if err.get("body_params") is not None:
+                        del_ctx_if_exists(err["body_params"])
+                    if err.get("query_params") is not None:
+                        del_ctx_if_exists(err["query_params"])
+                    if err.get("form_params") is not None:
+                        del_ctx_if_exists(err["form_params"])
                     return make_response(
                         jsonify({"validation_error": err}), status_code
                     )
