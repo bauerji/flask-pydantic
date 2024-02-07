@@ -4,5 +4,4 @@ pytest
 pytest-flask
 pytest-flake8
 pytest-coverage
-pytest-black
 pytest-mock
