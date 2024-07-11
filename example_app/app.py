@@ -26,19 +26,19 @@ class IndexParam(BaseModel):
 
 class BodyModel(BaseModel):
     name: str
-    nickname: Optional[str]
+    nickname: Optional[str] = None
 
 
 class FormModel(BaseModel):
     name: str
-    nickname: Optional[str]
+    nickname: Optional[str] = None
 
 
 class ResponseModel(BaseModel):
     id: int
     age: int
     name: str
-    nickname: Optional[str]
+    nickname: Optional[str] = None
 
 
 @app.route("/", methods=["POST"])
@@ -60,7 +60,7 @@ def post():
 
 @app.route("/form", methods=["POST"])
 @validate(form=FormModel, query=QueryModel)
-def post():
+def form_post():
     """
     Basic example with both query and form-data parameters, response object serialization.
     """
@@ -90,7 +90,7 @@ def post_kwargs(body: BodyModel, query: QueryModel):
 
 @app.route("/form/kwargs", methods=["POST"])
 @validate()
-def post_kwargs(form: FormModel, query: QueryModel):
+def form_post_kwargs(form: FormModel, query: QueryModel):
     """
     Basic example with both query and form-data parameters, response object serialization.
     This time using the decorated function kwargs `form` and `query` type hinting

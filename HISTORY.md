@@ -1,5 +1,9 @@
 # Release history
 
+## 0.12.0 (2024-01-08)
+### Features
+- Support Pydantic 2. Drop support for Pydantic 1. (thanks to @jkseppan)
+
 ## 0.11.0 (2022-09-25)
 ### Features
 - Allow raising `flask_pydantic.ValidationError` by setting `FLASK_PYDANTIC_VALIDATION_ERROR_RAISE=True`

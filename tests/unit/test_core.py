@@ -1,4 +1,6 @@
+import re
 from typing import Any, List, NamedTuple, Optional, Type, Union
+from ..util import assert_matches
 
 import pytest
 from flask import jsonify
@@ -8,7 +10,7 @@ from flask_pydantic.exceptions import (
     InvalidIterableOfModelsException,
     JsonBodyParsingError,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 from werkzeug.datastructures import ImmutableMultiDict
 
 
@@ -32,7 +34,7 @@ class ResponseModel(BaseModel):
     q1: int
     q2: str
     b1: float
-    b2: Optional[str]
+    b2: Optional[str] = None
 
 
 class QueryModel(BaseModel):
@@ -50,8 +52,8 @@ class FormModel(BaseModel):
     f2: str = None
 
 
-class RequestBodyModelRoot(BaseModel):
-    __root__: Union[str, RequestBodyModel]
+class RequestBodyModelRoot(RootModel):
+    root: Union[str, RequestBodyModel]
 
 
 validate_test_cases = [
@@ -89,9 +91,13 @@ validate_test_cases = [
                 "validation_error": {
                     "query_params": [
                         {
+                            "input": {},
                             "loc": ["q1"],
-                            "msg": "field required",
-                            "type": "value_error.missing",
+                            "msg": "Field required",
+                            "type": "missing",
+                            "url": re.compile(
+                                r"https://errors\.pydantic\.dev/.*/v/missing"
+                            ),
                         }
                     ]
                 }
@@ -126,9 +132,13 @@ validate_test_cases = [
                 "validation_error": {
                     "body_params": [
                         {
+                            "input": {},
                             "loc": ["b1"],
-                            "msg": "field required",
-                            "type": "value_error.missing",
+                            "msg": "Field required",
+                            "type": "missing",
+                            "url": re.compile(
+                                r"https://errors\.pydantic\.dev/.*/v/missing"
+                            ),
                         }
                     ]
                 }
@@ -144,9 +154,13 @@ validate_test_cases = [
                 "validation_error": {
                     "body_params": [
                         {
+                            "input": {},
                             "loc": ["b1"],
-                            "msg": "field required",
-                            "type": "value_error.missing",
+                            "msg": "Field required",
+                            "type": "missing",
+                            "url": re.compile(
+                                r"https://errors\.pydantic\.dev/.*/v/missing"
+                            ),
                         }
                     ]
                 }
@@ -165,9 +179,13 @@ validate_test_cases = [
                 "validation_error": {
                     "form_params": [
                         {
+                            "input": {},
                             "loc": ["f1"],
-                            "msg": "field required",
-                            "type": "value_error.missing",
+                            "msg": "Field required",
+                            "type": "missing",
+                            "url": re.compile(
+                                r"https://errors\.pydantic\.dev/.*/v/missing"
+                            ),
                         }
                     ]
                 }
@@ -191,11 +209,11 @@ class TestValidate:
             body = {}
             query = {}
             if mock_request.form_params:
-                body = mock_request.form_params.dict()
+                body = mock_request.form_params.model_dump()
             if mock_request.body_params:
-                body = mock_request.body_params.dict()
+                body = mock_request.body_params.model_dump()
             if mock_request.query_params:
-                query = mock_request.query_params.dict()
+                query = mock_request.query_params.model_dump()
             return parameters.response_model(**body, **query)
 
         response = validate(
@@ -209,14 +227,18 @@ class TestValidate:
         )(f)()
 
         assert response.status_code == parameters.expected_status_code
-        assert response.json == parameters.expected_response_body
+        assert_matches(parameters.expected_response_body, response.json)
         if 200 <= response.status_code < 300:
             assert (
-                mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
+                mock_request.body_params.model_dump(
+                    exclude_none=True, exclude_defaults=True
+                )
                 == parameters.request_body
             )
             assert (
-                mock_request.query_params.dict(exclude_none=True, exclude_defaults=True)
+                mock_request.query_params.model_dump(
+                    exclude_none=True, exclude_defaults=True
+                )
                 == parameters.request_query.to_dict()
             )
 
@@ -233,7 +255,7 @@ class TestValidate:
             form: parameters.form_model,
         ):
             return parameters.response_model(
-                **body.dict(), **query.dict(), **form.dict()
+                **body.model_dump(), **query.model_dump(), **form.model_dump()
             )
 
         response = validate(
@@ -243,15 +265,19 @@ class TestValidate:
             request_body_many=parameters.request_body_many,
         )(f)()
 
-        assert response.json == parameters.expected_response_body
+        assert_matches(parameters.expected_response_body, response.json)
         assert response.status_code == parameters.expected_status_code
         if 200 <= response.status_code < 300:
             assert (
-                mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
+                mock_request.body_params.model_dump(
+                    exclude_none=True, exclude_defaults=True
+                )
                 == parameters.request_body
             )
             assert (
-                mock_request.query_params.dict(exclude_none=True, exclude_defaults=True)
+                mock_request.query_params.model_dump(
+                    exclude_none=True, exclude_defaults=True
+                )
                 == parameters.request_query.to_dict()
             )
 
@@ -265,7 +291,7 @@ class TestValidate:
 
         response = validate()(f)()
         assert response.status_code == expected_status_code
-        assert response.json == expected_response_body
+        assert_matches(expected_response_body, response.json)
 
     @pytest.mark.usefixtures("request_ctx")
     def test_response_already_response(self):
@@ -275,7 +301,7 @@ class TestValidate:
             return jsonify(expected_response_body)
 
         response = validate()(f)()
-        assert response.json == expected_response_body
+        assert_matches(expected_response_body, response.json)
 
     @pytest.mark.usefixtures("request_ctx")
     def test_response_many_response_objs(self):
@@ -294,7 +320,7 @@ class TestValidate:
             return response_content
 
         response = validate(exclude_none=True, response_many=True)(f)()
-        assert response.json == expected_response_body
+        assert_matches(expected_response_body, response.json)
 
     @pytest.mark.usefixtures("request_ctx")
     def test_invalid_many_raises(self):
@@ -337,7 +363,7 @@ class TestValidate:
         )(f)()
 
         assert response.status_code == 200
-        assert response.json == expected_response_body
+        assert_matches(expected_response_body, response.json)
 
     def test_unsupported_media_type(self, request_ctx, mocker):
         mock_request = mocker.patch.object(request_ctx, "request")
@@ -360,17 +386,35 @@ class TestValidate:
         body_model = RequestBodyModelRoot
         response = validate(body_model)(lambda x: x)()
         assert response.status_code == 400
-        assert response.json == {
-            "validation_error": {
-                "body_params": [
-                    {
-                        "loc": ["__root__"],
-                        "msg": "none is not an allowed value",
-                        "type": "type_error.none.not_allowed",
-                    }
-                ]
-            }
-        }
+
+        assert_matches(
+            {
+                "validation_error": {
+                    "body_params": [
+                        {
+                            "input": None,
+                            "loc": ["str"],
+                            "msg": "Input should be a valid string",
+                            "type": "string_type",
+                            "url": re.compile(
+                                r"https://errors\.pydantic\.dev/.*/v/string_type"
+                            ),
+                        },
+                        {
+                            "ctx": {"class_name": "RequestBodyModel"},
+                            "input": None,
+                            "loc": ["RequestBodyModel"],
+                            "msg": "Input should be a valid dictionary or instance of RequestBodyModel",
+                            "type": "model_type",
+                            "url": re.compile(
+                                r"https://errors\.pydantic\.dev/.*/v/model_type"
+                            ),
+                        },
+                    ]
+                }
+            },
+            response.json,
+        )
 
     def test_damaged_request_body_json_with_charset(self, request_ctx, mocker):
         mock_request = mocker.patch.object(request_ctx, "request")
@@ -403,11 +447,11 @@ class TestValidate:
             body = {}
             query = {}
             if mock_request.form_params:
-                body = mock_request.form_params.dict()
+                body = mock_request.form_params.model_dump()
             if mock_request.body_params:
-                body = mock_request.body_params.dict()
+                body = mock_request.body_params.model_dump()
             if mock_request.query_params:
-                query = mock_request.query_params.dict()
+                query = mock_request.query_params.model_dump()
             return parameters.response_model(**body, **query)
 
         response = validate(
@@ -421,14 +465,18 @@ class TestValidate:
         )(f)()
 
         assert response.status_code == parameters.expected_status_code
-        assert response.json == parameters.expected_response_body
+        assert_matches(parameters.expected_response_body, response.json)
         if 200 <= response.status_code < 300:
             assert (
-                mock_request.body_params.dict(exclude_none=True, exclude_defaults=True)
+                mock_request.body_params.model_dump(
+                    exclude_none=True, exclude_defaults=True
+                )
                 == parameters.request_body
             )
             assert (
-                mock_request.query_params.dict(exclude_none=True, exclude_defaults=True)
+                mock_request.query_params.model_dump(
+                    exclude_none=True, exclude_defaults=True
+                )
                 == parameters.request_query.to_dict()
             )
 
@@ -441,17 +489,35 @@ class TestValidate:
         body_model = RequestBodyModelRoot
         response = validate(body_model)(lambda x: x)()
         assert response.status_code == 422
-        assert response.json == {
-            "validation_error": {
-                "body_params": [
-                    {
-                        "loc": ["__root__"],
-                        "msg": "none is not an allowed value",
-                        "type": "type_error.none.not_allowed",
-                    }
-                ]
-            }
-        }
+
+        assert_matches(
+            {
+                "validation_error": {
+                    "body_params": [
+                        {
+                            "input": None,
+                            "loc": ["str"],
+                            "msg": "Input should be a valid string",
+                            "type": "string_type",
+                            "url": re.compile(
+                                r"https://errors\.pydantic\.dev/.*/v/string_type"
+                            ),
+                        },
+                        {
+                            "ctx": {"class_name": "RequestBodyModel"},
+                            "input": None,
+                            "loc": ["RequestBodyModel"],
+                            "msg": "Input should be a valid dictionary or instance of RequestBodyModel",
+                            "type": "model_type",
+                            "url": re.compile(
+                                r"https://errors\.pydantic\.dev/.*/v/model_type"
+                            ),
+                        },
+                    ]
+                }
+            },
+            response.json,
+        )
 
     def test_body_fail_validation_raise_exception(self, app, request_ctx, mocker):
         app.config["FLASK_PYDANTIC_VALIDATION_ERROR_RAISE"] = True
@@ -462,13 +528,28 @@ class TestValidate:
         body_model = RequestBodyModelRoot
         with pytest.raises(ValidationError) as excinfo:
             validate(body_model)(lambda x: x)()
-        assert excinfo.value.body_params == [
-            {
-                "loc": ("__root__",),
-                "msg": "none is not an allowed value",
-                "type": "type_error.none.not_allowed",
-            }
-        ]
+        assert_matches(
+            [
+                {
+                    "input": None,
+                    "loc": ("str",),
+                    "msg": "Input should be a valid string",
+                    "type": "string_type",
+                    "url": re.compile(
+                        r"https://errors\.pydantic\.dev/.*/v/string_type"
+                    ),
+                },
+                {
+                    "ctx": {"class_name": "RequestBodyModel"},
+                    "input": None,
+                    "loc": ("RequestBodyModel",),
+                    "msg": "Input should be a valid dictionary or instance of RequestBodyModel",
+                    "type": "model_type",
+                    "url": re.compile(r"https://errors\.pydantic\.dev/.*/v/model_type"),
+                },
+            ],
+            excinfo.value.body_params,
+        )
 
     def test_query_fail_validation_raise_exception(self, app, request_ctx, mocker):
         app.config["FLASK_PYDANTIC_VALIDATION_ERROR_RAISE"] = True
@@ -479,13 +560,18 @@ class TestValidate:
         query_model = QueryModel
         with pytest.raises(ValidationError) as excinfo:
             validate(query=query_model)(lambda x: x)()
-        assert excinfo.value.query_params == [
-            {
-                "loc": ("q1",),
-                "msg": "field required",
-                "type": "value_error.missing",
-            }
-        ]
+        assert_matches(
+            [
+                {
+                    "input": {},
+                    "loc": ("q1",),
+                    "msg": "Field required",
+                    "type": "missing",
+                    "url": re.compile(r"https://errors\.pydantic\.dev/.*/v/missing"),
+                }
+            ],
+            excinfo.value.query_params,
+        )
 
     def test_form_fail_validation_raise_exception(self, app, request_ctx, mocker):
         app.config["FLASK_PYDANTIC_VALIDATION_ERROR_RAISE"] = True
@@ -496,13 +582,18 @@ class TestValidate:
         form_model = FormModel
         with pytest.raises(ValidationError) as excinfo:
             validate(form=form_model)(lambda x: x)()
-        assert excinfo.value.form_params == [
-            {
-                "loc": ("f1",),
-                "msg": "field required",
-                "type": "value_error.missing",
-            }
-        ]
+        assert_matches(
+            [
+                {
+                    "input": {},
+                    "loc": ("f1",),
+                    "msg": "Field required",
+                    "type": "missing",
+                    "url": re.compile(r"https://errors\.pydantic\.dev/.*/v/missing"),
+                }
+            ],
+            excinfo.value.form_params,
+        )
 
 
 class TestIsIterableOfModels:
