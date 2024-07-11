@@ -2,7 +2,9 @@ from functools import wraps
 from typing import Any, Callable, Iterable, List, Optional, Tuple, Type, Union
 
 from flask import Response, current_app, jsonify, make_response, request
+from werkzeug.routing import Rule
 from pydantic import BaseModel, ValidationError, TypeAdapter, RootModel
+from pydantic.tools import parse_obj_as
 
 from .converters import convert_query_params
 from .exceptions import (
@@ -67,11 +69,15 @@ def validate_many_models(model: Type[BaseModel], content: Any) -> List[BaseModel
         raise ManyModelValidationError(ve.errors())
 
 
-def validate_path_params(func: Callable, kwargs: dict) -> Tuple[dict, list]:
+def validate_path_params(
+    func: Callable, kwargs: dict, url_rule: Rule
+) -> Tuple[dict, list]:
     errors = []
     validated = {}
     for name, type_ in func.__annotations__.items():
         if name in {"query", "body", "form", "return"}:
+            continue
+        if not url_rule or name not in url_rule.arguments:
             continue
         try:
             adapter = TypeAdapter(type_)
@@ -166,7 +172,7 @@ def validate(
         @wraps(func)
         def wrapper(*args, **kwargs):
             q, b, f, err = None, None, None, {}
-            kwargs, path_err = validate_path_params(func, kwargs)
+            kwargs, path_err = validate_path_params(func, kwargs, request.url_rule)
             if path_err:
                 err["path_params"] = path_err
             query_in_kwargs = func.__annotations__.get("query")
