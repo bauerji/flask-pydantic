@@ -1,5 +1,4 @@
 import re
-from typing import List, Optional
 
 import pytest
 from flask import jsonify, request
@@ -10,8 +9,8 @@ from ...util import assert_matches
 
 
 class ArrayModel(BaseModel):
-    arr1: List[str]
-    arr2: Optional[List[int]] = None
+    arr1: list[str]
+    arr2: list[int] | None = None
 
 
 @pytest.fixture
@@ -92,10 +91,10 @@ def app_with_untyped_path_param_route(app):
 def app_with_custom_root_type(app):
     class Person(BaseModel):
         name: str
-        age: Optional[int] = None
+        age: int | None = None
 
     class PersonBulk(BaseModel):
-        __root__: List[Person]
+        __root__: list[Person]
 
         def __len__(self):
             return len(self.root)

@@ -1,6 +1,5 @@
 import re
-import sys
-from typing import Any, List, NamedTuple, Optional, Tuple, Type, Union
+from typing import Any, NamedTuple
 
 import pytest
 from flask import jsonify
@@ -21,16 +20,16 @@ class EmptyModel(BaseModel):
 
 
 class ValidateParams(NamedTuple):
-    body_model: Type[BaseModel] = EmptyModel
-    query_model: Type[BaseModel] = EmptyModel
-    form_model: Type[BaseModel] = EmptyModel
-    response_model: Type[BaseModel] = EmptyModel
+    body_model: type[BaseModel] = EmptyModel
+    query_model: type[BaseModel] = EmptyModel
+    form_model: type[BaseModel] = EmptyModel
+    response_model: type[BaseModel] = EmptyModel
     on_success_status: int = 200
     request_query: ImmutableMultiDict = ImmutableMultiDict({})
     flat_request_query: bool = True
-    request_body: Union[dict, List[dict]] = {}
+    request_body: dict | list[dict] = {}
     request_form: ImmutableMultiDict = ImmutableMultiDict({})
-    expected_response_body: Optional[dict] = None
+    expected_response_body: dict | None = None
     expected_status_code: int = 200
     exclude_none: bool = False
     response_many: bool = False
@@ -41,7 +40,7 @@ class ResponseModel(BaseModel):
     q1: int
     q2: str
     b1: float
-    b2: Optional[str] = None
+    b2: str | None = None
 
 
 class QueryModel(BaseModel):
@@ -51,34 +50,32 @@ class QueryModel(BaseModel):
 
 class RequestBodyModel(BaseModel):
     b1: float
-    b2: Optional[str] = None
+    b2: str | None = None
 
 
 class FormModel(BaseModel):
     f1: int
-    f2: Optional[str] = None
+    f2: str | None = None
 
 
 class RequestWithIterableModel(BaseModel):
-    b1: List
-    b2: List[str]
-    b3: Tuple[str, int]
-    b4: Optional[List[int]] = None
-    b5: Union[Tuple[str, int], None] = None
+    b1: list
+    b2: list[str]
+    b3: tuple[str, int]
+    b4: list[int] | None = None
+    b5: tuple[str, int] | None = None
 
 
-if sys.version_info >= (3, 10):
-    # New Python(>=3.10) syntax tests
-    class RequestWithIterableModelPy310(BaseModel):
-        b1: list
-        b2: list[str]
-        b3: tuple[str, int]
-        b4: list[int] | None = None
-        b5: tuple[str, int] | None = None
+class RequestWithIterableModelPy310(BaseModel):
+    b1: list
+    b2: list[str]
+    b3: tuple[str, int]
+    b4: list[int] | None = None
+    b5: tuple[str, int] | None = None
 
 
 class RequestBodyModelRoot(RootModel):
-    root: Union[str, RequestBodyModel]
+    root: str | RequestBodyModel
 
 
 validate_test_cases = [
@@ -252,42 +249,41 @@ validate_test_cases = [
     ),
 ]
 
-if sys.version_info >= (3, 10):
-    validate_test_cases.extend(
-        [
-            pytest.param(
-                ValidateParams(
-                    request_query=ImmutableMultiDict(
-                        [
-                            ("b1", "str1"),
-                            ("b1", "str2"),
-                            ("b2", "str1"),
-                            ("b2", "str2"),
-                            ("b3", "str"),
-                            ("b3", 123),
-                            ("b4", 1),
-                            ("b4", 2),
-                            ("b4", 3),
-                            ("b5", "str"),
-                            ("b5", 321),
-                        ]
-                    ),
-                    flat_request_query=False,
-                    expected_response_body={
-                        "b1": ["str1", "str2"],
-                        "b2": ["str1", "str2"],
-                        "b3": ("str", 123),
-                        "b4": [1, 2, 3],
-                        "b5": ("str", 321),
-                    },
-                    query_model=RequestWithIterableModelPy310,
-                    response_model=RequestWithIterableModelPy310,
-                    expected_status_code=200,
+validate_test_cases.extend(
+    [
+        pytest.param(
+            ValidateParams(
+                request_query=ImmutableMultiDict(
+                    [
+                        ("b1", "str1"),
+                        ("b1", "str2"),
+                        ("b2", "str1"),
+                        ("b2", "str2"),
+                        ("b3", "str"),
+                        ("b3", 123),
+                        ("b4", 1),
+                        ("b4", 2),
+                        ("b4", 3),
+                        ("b5", "str"),
+                        ("b5", 321),
+                    ]
                 ),
-                id="iterable and Iterable | None fields in pydantic model in query (Python 3.10+)",
+                flat_request_query=False,
+                expected_response_body={
+                    "b1": ["str1", "str2"],
+                    "b2": ["str1", "str2"],
+                    "b3": ("str", 123),
+                    "b4": [1, 2, 3],
+                    "b5": ("str", 321),
+                },
+                query_model=RequestWithIterableModelPy310,
+                response_model=RequestWithIterableModelPy310,
+                expected_status_code=200,
             ),
-        ]
-    )
+            id="iterable and Iterable | None fields in pydantic model in query (Python 3.10+)",
+        ),
+    ]
+)
 
 
 class TestValidate:
@@ -747,7 +743,7 @@ def test_convert_query_params(query_params: ImmutableMultiDict, expected_result:
     class Model(BaseModel):
         a: int
         b: str
-        c: Optional[List[str]]
-        d: Optional[List[int]]
+        c: list[str] | None
+        d: list[int] | None
 
     assert convert_query_params(query_params, Model) == expected_result

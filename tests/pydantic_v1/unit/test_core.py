@@ -1,4 +1,4 @@
-from typing import Any, List, NamedTuple, Optional, Type, Union
+from typing import Any, NamedTuple
 
 import pytest
 from flask import jsonify
@@ -15,15 +15,15 @@ from ...util import assert_matches
 
 
 class ValidateParams(NamedTuple):
-    body_model: Optional[Type[BaseModel]] = None
-    query_model: Optional[Type[BaseModel]] = None
-    form_model: Optional[Type[BaseModel]] = None
-    response_model: Type[BaseModel] = None
+    body_model: type[BaseModel] | None = None
+    query_model: type[BaseModel] | None = None
+    form_model: type[BaseModel] | None = None
+    response_model: type[BaseModel] = None
     on_success_status: int = 200
     request_query: ImmutableMultiDict = ImmutableMultiDict({})
-    request_body: Union[dict, List[dict]] = {}
+    request_body: dict | list[dict] = {}
     request_form: ImmutableMultiDict = ImmutableMultiDict({})
-    expected_response_body: Optional[dict] = None
+    expected_response_body: dict | None = None
     expected_status_code: int = 200
     exclude_none: bool = False
     response_many: bool = False
@@ -34,7 +34,7 @@ class ResponseModel(BaseModel):
     q1: int
     q2: str
     b1: float
-    b2: Optional[str] = None
+    b2: str | None = None
 
 
 class QueryModel(BaseModel):
@@ -44,7 +44,7 @@ class QueryModel(BaseModel):
 
 class RequestBodyModel(BaseModel):
     b1: float
-    b2: Optional[str] = None
+    b2: str | None = None
 
 
 class FormModel(BaseModel):
@@ -53,7 +53,7 @@ class FormModel(BaseModel):
 
 
 class RequestBodyModelRoot(BaseModel):
-    __root__: Union[str, RequestBodyModel]
+    __root__: str | RequestBodyModel
 
 
 validate_test_cases = [
@@ -582,7 +582,7 @@ def test_convert_query_params(query_params: ImmutableMultiDict, expected_result:
     class Model(BaseModel):
         a: int
         b: str
-        c: Optional[List[str]]
-        d: Optional[List[int]]
+        c: list[str] | None
+        d: list[int] | None
 
     assert convert_query_params(query_params, Model) == expected_result

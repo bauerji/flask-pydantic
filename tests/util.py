@@ -1,8 +1,7 @@
 import re
-from typing import Dict, List, Union
 
-ExpectedType = Union[re.Pattern, str, List["ExpectedType"], Dict[str, "ExpectedType"]]
-ActualType = Union[str, List["ActualType"], Dict[str, "ActualType"]]
+ExpectedType = re.Pattern | str | list["ExpectedType"] | dict[str, "ExpectedType"]
+ActualType = str | list["ActualType"] | dict[str, "ActualType"]
 
 
 def assert_matches(expected: ExpectedType, actual: ActualType):
@@ -23,7 +22,7 @@ def assert_matches(expected: ExpectedType, actual: ActualType):
             assert_matches(value, actual[key])
     elif isinstance(expected, (list, tuple)):
         assert len(expected) == len(actual)
-        for a, b in zip(expected, actual):
+        for a, b in zip(expected, actual, strict=False):
             assert_matches(a, b)
     elif isinstance(expected, re.Pattern):
         assert expected.match(actual)

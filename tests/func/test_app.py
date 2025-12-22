@@ -1,7 +1,8 @@
 import asyncio
 import re
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, List, Optional
+from typing import Any
 
 import pytest
 from flask import jsonify, request
@@ -12,8 +13,8 @@ from ..util import assert_matches
 
 
 class ArrayModel(BaseModel):
-    arr1: List[str]
-    arr2: Optional[List[int]] = None
+    arr1: list[str]
+    arr2: list[int] | None = None
 
 
 @pytest.fixture
@@ -115,10 +116,10 @@ def app_with_path_param_route_and_injector(app):
 def app_with_custom_root_type(app):
     class Person(BaseModel):
         name: str
-        age: Optional[int] = None
+        age: int | None = None
 
     class PersonBulk(RootModel):
-        root: List[Person]
+        root: list[Person]
 
         def __len__(self):
             return len(self.root)

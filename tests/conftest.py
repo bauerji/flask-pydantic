@@ -1,5 +1,3 @@
-from typing import List, Optional, Type
-
 import pytest
 from flask import Flask, request
 from flask_pydantic import validate
@@ -7,7 +5,7 @@ from pydantic import BaseModel
 
 
 @pytest.fixture
-def posts() -> List[dict]:
+def posts() -> list[dict]:
     return [
         {"title": "title 1", "text": "random text", "views": 1},
         {"title": "2", "text": "another text", "views": 2},
@@ -17,34 +15,34 @@ def posts() -> List[dict]:
 
 
 @pytest.fixture
-def query_model() -> Type[BaseModel]:
+def query_model() -> type[BaseModel]:
     class Query(BaseModel):
         limit: int = 2
-        min_views: Optional[int] = None
+        min_views: int | None = None
 
     return Query
 
 
 @pytest.fixture
-def body_model() -> Type[BaseModel]:
+def body_model() -> type[BaseModel]:
     class Body(BaseModel):
         search_term: str
-        exclude: Optional[str] = None
+        exclude: str | None = None
 
     return Body
 
 
 @pytest.fixture
-def form_model() -> Type[BaseModel]:
+def form_model() -> type[BaseModel]:
     class Form(BaseModel):
         search_term: str
-        exclude: Optional[str] = None
+        exclude: str | None = None
 
     return Form
 
 
 @pytest.fixture
-def post_model() -> Type[BaseModel]:
+def post_model() -> type[BaseModel]:
     class Post(BaseModel):
         title: str
         text: str
@@ -54,9 +52,9 @@ def post_model() -> Type[BaseModel]:
 
 
 @pytest.fixture
-def response_model(post_model: BaseModel) -> Type[BaseModel]:
+def response_model(post_model: BaseModel) -> type[BaseModel]:
     class Response(BaseModel):
-        results: List[post_model]
+        results: list[post_model]
         count: int
 
     return Response
@@ -68,7 +66,7 @@ def request_ctx(app):
         yield ctx
 
 
-def is_excluded(post: dict, exclude: Optional[str] = None) -> bool:
+def is_excluded(post: dict, exclude: str | None = None) -> bool:
     if exclude is None:
         return False
     return exclude in post["title"] or exclude in post["text"]
@@ -77,8 +75,8 @@ def is_excluded(post: dict, exclude: Optional[str] = None) -> bool:
 def pass_search(
     post: dict,
     search_term: str,
-    exclude: Optional[str] = None,
-    min_views: Optional[int] = None,
+    exclude: str | None = None,
+    min_views: int | None = None,
 ) -> bool:
     return (
         (search_term in post["title"] or search_term in post["text"])

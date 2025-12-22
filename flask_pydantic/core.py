@@ -1,5 +1,6 @@
+from collections.abc import Callable, Iterable
 from functools import wraps
-from typing import Any, Callable, Iterable, List, Optional, Tuple, Type, Union
+from typing import Any
 
 from flask import Response, current_app, jsonify, make_response, request
 from pydantic import BaseModel, RootModel, TypeAdapter, ValidationError
@@ -20,7 +21,7 @@ try:
 except ImportError:
     pass
 
-V1OrV2BaseModel = Union[BaseModel, V1BaseModel]
+V1OrV2BaseModel = BaseModel | V1BaseModel
 
 
 def _model_dump_json(model: V1OrV2BaseModel, **kwargs):
@@ -48,7 +49,7 @@ def _sanitize_ctx_errors(errors):
 
 
 def make_json_response(
-    content: Union[V1OrV2BaseModel, Iterable[V1OrV2BaseModel]],
+    content: V1OrV2BaseModel | Iterable[V1OrV2BaseModel],
     status_code: int,
     by_alias: bool,
     exclude_none: bool = False,
@@ -80,8 +81,8 @@ def is_iterable_of_models(content: Any) -> bool:
 
 
 def validate_many_models(
-    model: Type[V1OrV2BaseModel], content: Any
-) -> List[V1OrV2BaseModel]:
+    model: type[V1OrV2BaseModel], content: Any
+) -> list[V1OrV2BaseModel]:
     try:
         return [model(**fields) for fields in content]
     except TypeError as te:
@@ -99,7 +100,7 @@ def validate_many_models(
         raise ManyModelValidationError(_sanitize_ctx_errors(ve.errors())) from ve
 
 
-def validate_path_params(func: Callable, kwargs: dict) -> Tuple[dict, list]:
+def validate_path_params(func: Callable, kwargs: dict) -> tuple[dict, list]:
     errors = []
     validated = {}
     # Only validate parameters that are actual path parameters from the route
@@ -132,15 +133,15 @@ def get_body_dict(**params):
 
 
 def validate(
-    body: Optional[Type[V1OrV2BaseModel]] = None,
-    query: Optional[Type[V1OrV2BaseModel]] = None,
+    body: type[V1OrV2BaseModel] | None = None,
+    query: type[V1OrV2BaseModel] | None = None,
     on_success_status: int = 200,
     exclude_none: bool = False,
     response_many: bool = False,
     request_body_many: bool = False,
     response_by_alias: bool = False,
-    get_json_params: Optional[dict] = None,
-    form: Optional[Type[V1OrV2BaseModel]] = None,
+    get_json_params: dict | None = None,
+    form: type[V1OrV2BaseModel] | None = None,
 ):
     """
     Decorator for route methods which will validate query, body and form parameters

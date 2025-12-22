@@ -1,6 +1,3 @@
-from typing import List, Optional
-
-
 class BaseFlaskPydanticException(Exception):
     """Base exc class for all exception from this library"""
 
@@ -24,7 +21,7 @@ class ManyModelValidationError(BaseFlaskPydanticException):
     """This exception is raised if there is a failure during validation of many
     models in an iterable"""
 
-    def __init__(self, errors: List[dict], *args):
+    def __init__(self, errors: list[dict], *args):
         self._errors = errors
         super().__init__(*args)
 
@@ -38,10 +35,10 @@ class ValidationError(BaseFlaskPydanticException):
 
     def __init__(
         self,
-        body_params: Optional[List[dict]] = None,
-        form_params: Optional[List[dict]] = None,
-        path_params: Optional[List[dict]] = None,
-        query_params: Optional[List[dict]] = None,
+        body_params: list[dict] | None = None,
+        form_params: list[dict] | None = None,
+        path_params: list[dict] | None = None,
+        query_params: list[dict] | None = None,
     ):
         super().__init__()
         self.body_params = body_params

@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 from flask import Flask, jsonify, request
 from flask_pydantic import validate
@@ -26,19 +25,19 @@ class IndexParam(BaseModel):
 
 class BodyModel(BaseModel):
     name: str
-    nickname: Optional[str] = None
+    nickname: str | None = None
 
 
 class FormModel(BaseModel):
     name: str
-    nickname: Optional[str] = None
+    nickname: str | None = None
 
 
 class ResponseModel(BaseModel):
     id: int
     age: int
     name: str
-    nickname: Optional[str] = None
+    nickname: str | None = None
 
 
 @app.route("/", methods=["POST"])

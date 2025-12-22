@@ -1,5 +1,3 @@
-from typing import Optional
-
 from flask import Flask
 from flask_pydantic import validate
 from pydantic import BaseModel
@@ -9,7 +7,7 @@ app = Flask("flask_pydantic_app")
 
 class RequestBodyModel(BaseModel):
     name: str
-    nickname: Optional[str] = None
+    nickname: str | None = None
 
 
 class QueryModel(BaseModel):
@@ -18,7 +16,7 @@ class QueryModel(BaseModel):
 
 class FormModel(BaseModel):
     name: str
-    nickname: Optional[str] = None
+    nickname: str | None = None
 
 
 @app.route("/", methods=["GET"])
@@ -41,7 +39,7 @@ class ResponseModel(BaseModel):
     id: int
     age: int
     name: str
-    nickname: Optional[str] = None
+    nickname: str | None = None
 
 
 @app.route("/character/<character_id>/", methods=["GET"])
