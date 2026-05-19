@@ -63,3 +63,16 @@ include = [
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
+
+[dependency-groups]
+build = [
+    "build>=1.1.1",
+]
+test = [
+    "flask[async]>=2.2.5",
+    "pytest>=7.4.4",
+    "pytest-coverage>=0.0",
+    "pytest-flask>=1.3.0",
+    "pytest-mock>=3.11.1",
+    "pytest-ruff>=0.2.1",
+]
